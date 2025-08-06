@@ -1,3 +1,7 @@
+// @name missav
+// @author missav
+// @description missav插件
+// @version 0.0.2
 class Parser {
     match(url) {
         // return true if the url is matched
