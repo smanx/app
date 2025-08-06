@@ -1,5 +1,6 @@
 function FindProxyForURL(url, host) {
 	if (
+		dnsDomainIs(host, "n1") ||
 		isInNet(host, "0.0.0.0", "255.0.0.0")||
 		isInNet(host, "10.0.0.0", "255.0.0.0")||
 		isInNet(host, "127.0.0.0", "255.0.0.0")||
