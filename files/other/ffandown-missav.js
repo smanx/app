@@ -15,11 +15,11 @@ class Parser {
     }
     async parser(url, options) {
         console.log('parser missav');
-        return {
-            url: 'http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8',
-            headers: []
-        }
-        let data = await fetch( 'https://ffandown-miss.smanx.xx.kg/?url=' + url, {
+        // return {
+        //     url: 'http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8',
+        //     headers: []
+        // }
+        let data = await fetch( 'https://smanxapi.netlify.app/api/ffandown-missav?url=' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
                 "sec-ch-ua-arch": "\"arm\"",
