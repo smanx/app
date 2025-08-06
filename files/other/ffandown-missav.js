@@ -10,10 +10,11 @@
 class Parser {
     match(url) {
         // return true if the url is matched
+        console.log('match missav');
         return url.startsWith('https://missav');
     }
     async parser(url, options) {
-        
+        console.log('parser missav');
         let data = await fetch( 'https://ffandown-miss.smanx.xx.kg/?url=' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
@@ -30,6 +31,7 @@ class Parser {
                 "upgrade-insecure-requests": "1"
             }
         }).then(res => res.json())
+        console.log('data', data);
         const extractedCode = data.extractedCode
         let m3u8 = eval(extractedCode);
         return {
