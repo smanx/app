@@ -13,7 +13,22 @@ class Parser {
         return url.startsWith('https://missav');
     }
     async parser(url, options) {
-        let originalText = await fetch(url).then(res => res.text())
+        let originalText = await fetch(url, {
+            "headers": {
+                "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
+                "sec-ch-ua-arch": "\"arm\"",
+                "sec-ch-ua-bitness": "\"64\"",
+                "sec-ch-ua-form-factors": "\"Desktop\"",
+                "sec-ch-ua-full-version": "\"138.0.3351.83\"",
+                "sec-ch-ua-full-version-list": "\"Not)A;Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"138.0.7204.101\", \"Microsoft Edge\";v=\"138.0.3351.83\"",
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-model": "\"\"",
+                "sec-ch-ua-platform": "\"macOS\"",
+                "sec-ch-ua-platform-version": "\"14.4.1\"",
+                "sec-ch-ua-wow64": "?0",
+                "upgrade-insecure-requests": "1"
+            }
+        }).then(res => res.text())
         const regex = /eval\(function\(p,a,c,k,e,d\)\{[\s\S]*?\}\)\)/;
         const match = originalText.match(regex);
         let m3u8 = ''
@@ -28,26 +43,7 @@ class Parser {
         }
         return {
             url: m3u8,
-            headers: [
-                { "key": "accept", "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7" },
-                { "key": "accept-language", "value": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6" },
-                { "key": "cache-control", "value": "max-age=0" },
-                { "key": "priority", "value": "u=0, i" },
-                { "key": "sec-ch-ua", "value": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"" },
-                { "key": "sec-ch-ua-arch", "value": "\"arm\"" },
-                { "key": "sec-ch-ua-bitness", "value": "\"64\"" },
-                { "key": "sec-ch-ua-full-version", "value": "\"138.0.3351.83\"" },
-                { "key": "sec-ch-ua-full-version-list", "value": "\"Not)A;Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"138.0.7204.101\", \"Microsoft Edge\";v=\"138.0.3351.83\"" },
-                { "key": "sec-ch-ua-mobile", "value": "?0" },
-                { "key": "sec-ch-ua-model", "value": "\"\"" },
-                { "key": "sec-ch-ua-platform", "value": "\"macOS\"" },
-                { "key": "sec-ch-ua-platform-version", "value": "\"14.4.1\"" },
-                { "key": "sec-fetch-dest", "value": "document" },
-                { "key": "sec-fetch-mode", "value": "navigate" },
-                { "key": "sec-fetch-site", "value": "same-origin" },
-                { "key": "sec-fetch-user", "value": "?1" },
-                { "key": "upgrade-insecure-requests", "value": "1" }
-            ]
+            headers: []
         }
     }
 }
