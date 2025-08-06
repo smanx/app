@@ -35,9 +35,7 @@ class Parser {
                 "upgrade-insecure-requests": "1"
             }
         }).then(res => res.json())
-        console.log('data', data);
-        const extractedCode = data.extractedCode
-        let m3u8 = eval(extractedCode);
+        let m3u8 = data.m3u8;
         return {
             url: m3u8,
             headers: []
