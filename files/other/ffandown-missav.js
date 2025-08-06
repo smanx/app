@@ -14,7 +14,7 @@ class Parser {
     }
     async parser(url, options) {
         
-        let originalText = await fetch('https://netlify-smanx.netlify.app/edge/proxy/' + url, {
+        let data = await fetch( 'https://ffandown-miss.smanx.xx.kg/?url=' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
                 "sec-ch-ua-arch": "\"arm\"",
@@ -29,19 +29,9 @@ class Parser {
                 "sec-ch-ua-wow64": "?0",
                 "upgrade-insecure-requests": "1"
             }
-        }).then(res => res.text())
-        const regex = /eval\(function\(p,a,c,k,e,d\)\{[\s\S]*?\}\)\)/;
-        const match = originalText.match(regex);
-        let m3u8 = ''
-        if (match && match[0]) {
-            const extractedCode = match[0];
-            console.log("提取到的代码：");
-            console.log(extractedCode);
-            let m3u8 = eval(extractedCode);
-            console.log(m3u8)
-        } else {
-            console.log("未找到匹配的代码");
-        }
+        }).then(res => res.json())
+        const extractedCode = data.extractedCode
+        let m3u8 = eval(extractedCode);
         return {
             url: m3u8,
             headers: []
