@@ -13,8 +13,21 @@ class Parser {
         return url.startsWith('https://missav');
     }
     async parser(url, options) {
+        let originalText = await fetch(url).then(res => res.text())
+        const regex = /eval\(function\(p,a,c,k,e,d\)\{[\s\S]*?\}\)\)/;
+        const match = originalText.match(regex);
+        let m3u8 = ''
+        if (match && match[0]) {
+            const extractedCode = match[0];
+            console.log("提取到的代码：");
+            console.log(extractedCode);
+            let m3u8 = eval(extractedCode);
+            console.log(m3u8)
+        } else {
+            console.log("未找到匹配的代码");
+        }
         return {
-            url: 'http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8',
+            url: m3u8,
             headers: [
             ]
         }
