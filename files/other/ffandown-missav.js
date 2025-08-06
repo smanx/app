@@ -13,7 +13,8 @@ class Parser {
         return url.startsWith('https://missav');
     }
     async parser(url, options) {
-        let originalText = await fetch(url, {
+        
+        let originalText = await fetch('https://netlify-smanx.netlify.app/edge/proxy/' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
                 "sec-ch-ua-arch": "\"arm\"",
