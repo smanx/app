@@ -442,36 +442,93 @@
             updateBackupButtonState();
         }, 300);
 
-        // 处理照片选择
-        function handlePhotoSelection(e) {
+        // 处理照片选择 - 异步版本，支持大量文件处理
+        async function handlePhotoSelection(e) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
-            // 批量添加新选择的照片
+            // 显示处理进度提示
+            if (files.length > 50) {
+                showStatus('info', `正在处理 ${files.length} 个文件，请稍候...`);
+            }
+
+            // 分批处理文件，避免界面卡顿
+            const batchSize = 50; // 每批处理50个文件
             let addedCount = 0;
-            files.forEach(file => {
-                // 检查是否已存在
-                const isDuplicate = selectedPhotos.some(p => p.name === file.name && p.size === file.size);
-                if (!isDuplicate) {
-                    selectedPhotos.push(file);
-                    addedCount++;
+            let processedCount = 0;
+            const totalFiles = files.length;
+
+            // 显示进度条（如果文件数量较多）
+            if (totalFiles > 50) {
+                progressContainer.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                progressPercent.textContent = '0%';
+                progressText.textContent = `处理文件 0/${totalFiles}`;
+            }
+
+            try {
+                // 分批处理文件
+                for (let i = 0; i < files.length; i += batchSize) {
+                    const batch = files.slice(i, i + batchSize);
+                    
+                    // 处理当前批次
+                    batch.forEach(file => {
+                        // 检查是否已存在
+                        const isDuplicate = selectedPhotos.some(p => p.name === file.name && p.size === file.size);
+                        if (!isDuplicate) {
+                            selectedPhotos.push(file);
+                            addedCount++;
+                        }
+                        processedCount++;
+                    });
+
+                    // 更新进度（如果文件数量较多）
+                    if (totalFiles > 50) {
+                        const percent = Math.round((processedCount / totalFiles) * 100);
+                        progressBar.style.width = `${percent}%`;
+                        progressPercent.textContent = `${percent}%`;
+                        progressText.textContent = `处理文件 ${processedCount}/${totalFiles}`;
+                    }
+
+                    // 每处理一批次后让出控制权，避免界面卡顿
+                    if (i + batchSize < files.length) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
                 }
-            });
 
-            // 重置 input 值，允许重复选择相同文件
-            photoInput.value = '';
+                // 重置 input 值，允许重复选择相同文件
+                photoInput.value = '';
 
-            // 只有当有新图片添加时才更新UI
-            if (addedCount > 0) {
-                // 使用防抖来减少频繁的UI更新
-                debouncedUpdateUI();
+                // 隐藏进度条
+                if (totalFiles > 50) {
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        progressBar.style.width = '0%';
+                    }, 1000);
+                }
+
+                // 更新UI
+                if (addedCount > 0) {
+                    // 使用防抖来减少频繁的UI更新
+                    debouncedUpdateUI();
+                    
+                    // 显示添加成功的提示
+                    if (addedCount > 1) {
+                        showStatus('success', `成功添加 ${addedCount} 张照片`);
+                    } else if (addedCount === 1) {
+                        showStatus('success', '成功添加 1 张照片');
+                    }
+                } else if (processedCount > 0) {
+                    showStatus('info', '没有新增照片（可能已全部存在）');
+                }
+
+            } catch (error) {
+                console.error('处理照片选择时发生错误:', error);
+                showStatus('error', '处理照片时发生错误');
                 
-                // 显示添加成功的提示（立即显示）
-                if (addedCount > 1) {
-                    showStatus('info', `成功添加 ${addedCount} 张照片`);
-                } else if (addedCount === 1) {
-                    showStatus('info', '成功添加 1 张照片');
-                }
+                // 隐藏进度条
+                progressContainer.classList.add('hidden');
+                progressBar.style.width = '0%';
             }
         }
 
