@@ -444,10 +444,10 @@
 
         // 处理照片选择 - 异步版本，支持大量文件处理
         async function handlePhotoSelection(e) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // 让出控制权，避免界面卡顿
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
-            await new Promise(resolve => setTimeout(resolve, 100)); // 让出控制权，避免界面卡顿
             // 显示处理进度提示
             if (files.length > 50) {
                 showStatus('info', `正在处理 ${files.length} 个文件，请稍候...`);
