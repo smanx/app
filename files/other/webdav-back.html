@@ -432,28 +432,56 @@
             updateBackupButtonState();
         }
 
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 防抖的UI更新函数
+        const debouncedUpdateUI = debounce(() => {
+            updatePhotoCount();
+            updateBackupButtonState();
+        }, 300);
+
         // 处理照片选择
         function handlePhotoSelection(e) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
-            // 添加新选择的照片
+            // 批量添加新选择的照片
+            let addedCount = 0;
             files.forEach(file => {
                 // 检查是否已存在
                 const isDuplicate = selectedPhotos.some(p => p.name === file.name && p.size === file.size);
                 if (!isDuplicate) {
                     selectedPhotos.push(file);
+                    addedCount++;
                 }
             });
 
             // 重置 input 值，允许重复选择相同文件
             photoInput.value = '';
 
-            // 更新照片数量显示
-            updatePhotoCount();
-
-            // 更新备份按钮状态
-            updateBackupButtonState();
+            // 只有当有新图片添加时才更新UI
+            if (addedCount > 0) {
+                // 使用防抖来减少频繁的UI更新
+                debouncedUpdateUI();
+                
+                // 显示添加成功的提示（立即显示）
+                if (addedCount > 1) {
+                    showStatus('info', `成功添加 ${addedCount} 张照片`);
+                } else if (addedCount === 1) {
+                    showStatus('info', '成功添加 1 张照片');
+                }
+            }
         }
 
         // 添加照片预览
