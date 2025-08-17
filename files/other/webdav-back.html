@@ -516,6 +516,33 @@
             updateBackupButtonState();
         }
 
+        // 屏幕唤醒锁
+        let wakeLock = null;
+
+        // 请求屏幕唤醒锁
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('屏幕唤醒锁已释放');
+                    });
+                    console.log('屏幕唤醒锁已获取');
+                }
+            } catch (err) {
+                console.error('获取屏幕唤醒锁失败:', err);
+            }
+        }
+
+        // 释放屏幕唤醒锁
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+                console.log('屏幕唤醒锁已释放');
+            }
+        }
+
         // 开始备份
         async function startBackup() {
             if (selectedPhotos.length === 0) {
@@ -583,7 +610,10 @@
                     return;
                 }
 
-                // 4. 开始上传文件
+                // 4. 请求屏幕唤醒锁，防止备份过程中屏幕变暗
+                await requestWakeLock();
+
+                // 5. 开始上传文件
                 showStatus('info', '开始上传文件...');
                 
                 // 显示进度条
@@ -677,6 +707,9 @@
                 
                 // 重新启用备份按钮
                 backupBtn.disabled = false;
+            } finally {
+                // 释放屏幕唤醒锁
+                releaseWakeLock();
             }
         }
 
