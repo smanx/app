@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>照片备份 - WebDAV</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webdav@4.11.0/dist/web/webdav.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    
+
     <!-- 配置Tailwind主题 -->
     <script>
         tailwind.config = {
@@ -28,7 +30,7 @@
             }
         }
     </script>
-    
+
     <style type="text/tailwindcss">
         @layer utilities {
             .content-auto {
@@ -56,6 +58,7 @@
         }
     </style>
 </head>
+
 <body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
     <!-- 顶部导航栏 -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
@@ -78,11 +81,12 @@
         </div>
 
         <!-- WebDAV配置卡片 (默认隐藏) -->
-        <div id="webdavConfigCard" class="hidden bg-white rounded-xl p-5 mb-6 card-shadow transition-all duration-300 transform">
+        <div id="webdavConfigCard"
+            class="hidden bg-white rounded-xl p-5 mb-6 card-shadow transition-all duration-300 transform">
             <h2 class="text-lg font-semibold mb-4 flex items-center">
                 <i class="fa fa-server text-primary mr-2"></i>WebDAV 配置
             </h2>
-            
+
             <form id="webdavConfigForm" class="space-y-4">
                 <div>
                     <label for="serverUrl" class="block text-sm font-medium text-gray-700 mb-1">服务器地址</label>
@@ -90,53 +94,55 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                             <i class="fa fa-globe"></i>
                         </span>
-                        <input type="url" id="serverUrl" name="serverUrl" 
+                        <input type="url" id="serverUrl" name="serverUrl"
                             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus outline-none"
                             placeholder="例如: https://example.com/webdav" required>
                     </div>
                 </div>
-                
+
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                             <i class="fa fa-user"></i>
                         </span>
-                        <input type="text" id="username" name="username" 
+                        <input type="text" id="username" name="username"
                             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus outline-none"
                             placeholder="您的WebDAV用户名" required>
                     </div>
                 </div>
-                
+
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                             <i class="fa fa-lock"></i>
                         </span>
-                        <input type="password" id="password" name="password" 
+                        <input type="password" id="password" name="password"
                             class="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg input-focus outline-none"
                             placeholder="您的WebDAV密码" required>
-                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                        <button type="button" id="togglePassword"
+                            class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
                             <i class="fa fa-eye-slash"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <div>
                     <label for="backupPath" class="block text-sm font-medium text-gray-700 mb-1">备份路径</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                             <i class="fa fa-folder"></i>
                         </span>
-                        <input type="text" id="backupPath" name="backupPath" 
+                        <input type="text" id="backupPath" name="backupPath"
                             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg input-focus outline-none"
                             placeholder="例如: /Photos/Backup" value="/Photos/Backup">
                     </div>
                 </div>
-                
+
                 <div class="pt-2">
-                    <button type="submit" class="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center">
+                    <button type="submit"
+                        class="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center">
                         <i class="fa fa-save mr-2"></i>保存配置
                     </button>
                 </div>
@@ -153,14 +159,15 @@
                     全选
                 </button>
             </div>
-            
+
             <div class="mb-4">
-                <button id="pickPhotosBtn" class="w-full bg-light text-dark py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center">
+                <button id="pickPhotosBtn"
+                    class="w-full bg-light text-dark py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center">
                     <i class="fa fa-camera mr-2"></i>从相册选择照片
                 </button>
                 <input type="file" id="photoInput" accept="image/*" multiple capture="environment" class="hidden">
             </div>
-            
+
             <!-- 照片预览区域 -->
             <div id="photoPreview" class="grid grid-cols-3 gap-3 mt-4">
                 <!-- 照片缩略图将在这里动态生成 -->
@@ -176,7 +183,7 @@
             <h2 class="text-lg font-semibold mb-4 flex items-center">
                 <i class="fa fa-upload text-primary mr-2"></i>备份设置
             </h2>
-            
+
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <label class="flex items-center">
@@ -185,10 +192,12 @@
                     </label>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="autoBackup" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        <div
+                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                        </div>
                     </label>
                 </div>
-                
+
                 <div class="flex items-center justify-between">
                     <label class="flex items-center">
                         <i class="fa fa-wifi text-gray-500 mr-2"></i>
@@ -196,16 +205,20 @@
                     </label>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="onlyWifi" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        <div
+                            class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                        </div>
                     </label>
                 </div>
-                
+
                 <div class="pt-2">
-                    <button id="backupBtn" class="w-full bg-success text-white py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <button id="backupBtn"
+                        class="w-full bg-success text-white py-3 px-4 rounded-lg font-medium btn-hover flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
                         <i class="fa fa-cloud-upload mr-2"></i>开始备份
                     </button>
                 </div>
-                
+
                 <!-- 进度条 (默认隐藏) -->
                 <div id="progressContainer" class="hidden">
                     <div class="flex justify-between text-sm mb-1">
@@ -224,7 +237,7 @@
             <h2 class="text-lg font-semibold mb-4 flex items-center">
                 <i class="fa fa-history text-primary mr-2"></i>备份历史
             </h2>
-            
+
             <div id="backupHistory" class="space-y-3">
                 <!-- 历史记录将在这里动态生成 -->
                 <div class="text-center py-6 text-gray-500">
@@ -243,15 +256,18 @@
                     <i class="fa fa-home text-xl"></i>
                     <span class="text-xs mt-1">首页</span>
                 </button>
-                <button id="configNavBtn" class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
+                <button id="configNavBtn"
+                    class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
                     <i class="fa fa-cog text-xl"></i>
                     <span class="text-xs mt-1">配置</span>
                 </button>
-                <button id="historyBtn" class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
+                <button id="historyBtn"
+                    class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
                     <i class="fa fa-history text-xl"></i>
                     <span class="text-xs mt-1">历史</span>
                 </button>
-                <button id="aboutBtn" class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
+                <button id="aboutBtn"
+                    class="flex flex-col items-center text-gray-500 hover:text-primary transition-colors">
                     <i class="fa fa-info-circle text-xl"></i>
                     <span class="text-xs mt-1">关于</span>
                 </button>
@@ -269,12 +285,12 @@
                 <h3 class="text-xl font-bold">照片备份</h3>
                 <p class="text-gray-500 text-sm">版本 1.0.0</p>
             </div>
-            
+
             <div class="text-gray-600 text-sm space-y-2 mb-6">
                 <p>这是一个用于将手机照片备份到WebDAV服务器的应用。</p>
                 <p>配置您的WebDAV服务器信息，选择照片，一键备份，安全可靠。</p>
             </div>
-            
+
             <button id="closeAboutBtn" class="w-full bg-light text-dark py-2 px-4 rounded-lg font-medium btn-hover">
                 我知道了
             </button>
@@ -331,30 +347,30 @@
             // 显示/隐藏WebDAV配置
             settingsBtn.addEventListener('click', toggleWebDAVConfig);
             configNavBtn.addEventListener('click', toggleWebDAVConfig);
-            
+
             // 密码显示切换
             togglePassword.addEventListener('click', togglePasswordVisibility);
-            
+
             // WebDAV配置表单提交
             webdavConfigForm.addEventListener('submit', handleConfigSubmit);
-            
+
             // 选择照片
             pickPhotosBtn.addEventListener('click', () => photoInput.click());
             photoInput.addEventListener('change', handlePhotoSelection);
-            
+
             // 全选/取消全选
             selectAllBtn.addEventListener('click', toggleSelectAll);
-            
+
             // 备份按钮
             backupBtn.addEventListener('click', startBackup);
-            
+
             // 历史按钮
             historyBtn.addEventListener('click', scrollToHistory);
-            
+
             // 关于按钮
             aboutBtn.addEventListener('click', () => aboutModal.classList.remove('hidden'));
             closeAboutBtn.addEventListener('click', () => aboutModal.classList.add('hidden'));
-            
+
             // 设置切换
             autoBackupToggle.addEventListener('change', saveSettings);
             onlyWifiToggle.addEventListener('change', saveSettings);
@@ -373,7 +389,7 @@
         function togglePasswordVisibility() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            
+
             // 切换图标
             const icon = togglePassword.querySelector('i');
             if (type === 'password') {
@@ -388,7 +404,7 @@
         // 处理配置提交
         function handleConfigSubmit(e) {
             e.preventDefault();
-            
+
             const formData = new FormData(webdavConfigForm);
             const config = {
                 serverUrl: formData.get('serverUrl'),
@@ -396,13 +412,13 @@
                 password: formData.get('password'),
                 backupPath: formData.get('backupPath') || '/Photos/Backup'
             };
-            
+
             // 保存配置
             saveWebDAVConfig(config);
-            
+
             // 显示成功消息
             showStatus('success', 'WebDAV配置已保存');
-            
+
             // 更新备份按钮状态
             updateBackupButtonState();
         }
@@ -411,12 +427,12 @@
         function handlePhotoSelection(e) {
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
-            
+
             // 清空初始提示
             if (photoPreview.querySelector('div.col-span-3')) {
                 photoPreview.innerHTML = '';
             }
-            
+
             // 添加新选择的照片
             files.forEach(file => {
                 // 检查是否已存在
@@ -426,10 +442,10 @@
                     addPhotoPreview(file);
                 }
             });
-            
+
             // 重置 input 值，允许重复选择相同文件
             photoInput.value = '';
-            
+
             // 更新备份按钮状态
             updateBackupButtonState();
         }
@@ -437,24 +453,24 @@
         // 添加照片预览
         function addPhotoPreview(file) {
             const reader = new FileReader();
-            
-            reader.onload = function(e) {
+
+            reader.onload = function (e) {
                 const photoItem = document.createElement('div');
                 photoItem.className = 'relative-relative rounded-lg overflow-hidden overflow-hidden border-2 border-transparent cursor-pointer photo-item photo-item-selected';
                 photoItem.dataset.filename = file.name;
-                
+
                 photoItem.innerHTML = `
                     <img src="${e.target.result}" alt="照片预览" class="w-full h-24 object-cover">
                     <div class="absolute top-1 right-1 bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
                         <i class="fa fa-check"></i>
                     </div>
                 `;
-                
+
                 // 点击切换选择状态
                 photoItem.addEventListener('click', () => {
                     photoItem.classList.toggle('photo-item-selected');
                     const isSelected = photoItem.classList.contains('photo-item-selected');
-                    
+
                     // 更新selectedPhotos数组
                     if (!isSelected) {
                         selectedPhotos = selectedPhotos.filter(p => !(p.name === file.name && p.size === file.size));
@@ -465,14 +481,14 @@
                             selectedPhotos.push(file);
                         }
                     }
-                    
+
                     // 更新备份按钮状态
                     updateBackupButtonState();
                 });
-                
+
                 photoPreview.appendChild(photoItem);
             };
-            
+
             reader.readAsDataURL(file);
         }
 
@@ -480,7 +496,7 @@
         function toggleSelectAll() {
             const photoItems = document.querySelectorAll('.photo-item');
             const allSelected = selectedPhotos.length === photoItems.length && photoItems.length > 0;
-            
+
             if (allSelected) {
                 // 取消全选
                 photoItems.forEach(item => item.classList.remove('photo-item-selected'));
@@ -489,43 +505,56 @@
             } else {
                 // 全选
                 photoItems.forEach(item => item.classList.add('photo-item-selected'));
-                
+
                 // 重新构建selectedPhotos数组
                 const files = Array.from(photoInput.files);
                 selectedPhotos = [...files];
                 selectAllBtn.textContent = '取消全选';
             }
-            
+
             // 更新备份按钮状态
             updateBackupButtonState();
         }
 
         // 开始备份
-        function startBackup() {
+        async function startBackup() {
+            console.log('开始备份')
+            // 创建 WebDAV 客户端
+            const client = window.WebDAV.createClient(
+                webdavConfig.serverUrl, // WebDAV 服务器地址
+                {
+                    username: webdavConfig.username,
+                    password: webdavConfig.password
+                }
+            );
+            console.log('webdavConfig', webdavConfig)
+            let files = await client.getDirectoryContents(webdavConfig.backupPath).then(files => {
+                console.log("文件列表：", files);
+            })
             if (selectedPhotos.length === 0) {
                 showStatus('warning', '请先选择要备份的照片');
                 return;
             }
-            
+
             if (!webdavConfig.serverUrl || !webdavConfig.username) {
                 showStatus('warning', '请先配置WebDAV信息');
                 toggleWebDAVConfig();
                 return;
             }
-            
+
             // 显示进度条
             progressContainer.classList.remove('hidden');
             progressBar.style.width = '0%';
             progressPercent.textContent = '0%';
             progressText.textContent = `正在备份 1/${selectedPhotos.length}`;
-            
+
             // 禁用备份按钮
             backupBtn.disabled = true;
-            
+
             // 模拟备份过程 (实际项目中应替换为真实的WebDAV上传逻辑)
             let completed = 0;
             const total = selectedPhotos.length;
-            
+
             const simulateBackup = () => {
                 if (completed < total) {
                     // 模拟每张照片需要1-2秒上传时间
@@ -535,19 +564,19 @@
                         progressBar.style.width = `${percent}%`;
                         progressPercent.textContent = `${percent}%`;
                         progressText.textContent = `正在备份 ${completed}/${total}`;
-                        
+
                         simulateBackup();
                     }, 1000 + Math.random() * 1000);
                 } else {
                     // 备份完成
                     progressText.textContent = '备份完成';
-                    
+
                     // 记录备份历史
                     addBackupRecord(total);
-                    
+
                     // 显示成功消息
                     showStatus('success', `成功备份 ${total} 张照片`);
-                    
+
                     // 清空选择的照片
                     selectedPhotos = [];
                     photoPreview.innerHTML = `
@@ -556,18 +585,18 @@
                             <p>选择照片后将显示在这里</p>
                         </div>
                     `;
-                    
+
                     // 重置进度条
                     setTimeout(() => {
                         progressContainer.classList.add('hidden');
                         progressBar.style.width = '0%';
                     }, 2000);
-                    
+
                     // 更新备份按钮状态
                     updateBackupButtonState();
                 }
             };
-            
+
             simulateBackup();
         }
 
@@ -575,7 +604,7 @@
         function updateBackupButtonState() {
             const hasConfig = webdavConfig && webdavConfig.serverUrl && webdavConfig.username;
             const hasPhotos = selectedPhotos.length > 0;
-            
+
             backupBtn.disabled = !(hasConfig && hasPhotos);
         }
 
@@ -583,8 +612,8 @@
         function showStatus(type, message) {
             // 设置状态样式
             statusAlert.className = 'mb-6 p-4 rounded-lg flex items-center';
-            
-            switch(type) {
+
+            switch (type) {
                 case 'success':
                     statusAlert.classList.add('bg-success/10', 'text-success');
                     statusIcon.className = 'mr-3 text-lg fa fa-check-circle';
@@ -601,13 +630,13 @@
                     statusAlert.classList.add('bg-primary/10', 'text-primary');
                     statusIcon.className = 'mr-3 text-lg fa fa-info-circle';
             }
-            
+
             // 设置消息
             statusMessage.textContent = message;
-            
+
             // 显示状态
             statusAlert.classList.remove('hidden');
-            
+
             // 3秒后自动隐藏
             setTimeout(() => {
                 statusAlert.classList.add('hidden');
@@ -618,7 +647,7 @@
         function saveWebDAVConfig(config) {
             webdavConfig = config;
             localStorage.setItem('webdavConfig', JSON.stringify(config));
-            
+
             // 更新表单
             document.getElementById('serverUrl').value = config.serverUrl || '';
             document.getElementById('username').value = config.username || '';
@@ -676,7 +705,7 @@
                 count: count,
                 success: true
             };
-            
+
             backupHistoryRecords.unshift(record);
             saveBackupHistory();
             renderBackupHistory();
@@ -716,13 +745,13 @@
                 `;
                 return;
             }
-            
+
             backupHistory.innerHTML = '';
-            
+
             backupHistoryRecords.forEach(record => {
                 const recordEl = document.createElement('div');
                 recordEl.className = 'p-3 border border-gray-100 rounded-lg flex justify-between items-center';
-                
+
                 recordEl.innerHTML = `
                     <div>
                         <div class="font-medium">${record.date}</div>
@@ -732,7 +761,7 @@
                         <i class="fa fa-check-circle"></i>
                     </div>
                 `;
-                
+
                 backupHistory.appendChild(recordEl);
             });
         }
@@ -743,4 +772,5 @@
         }
     </script>
 </body>
+
 </html>
