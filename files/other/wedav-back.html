@@ -518,19 +518,6 @@
 
         // 开始备份
         async function startBackup() {
-            console.log('开始备份')
-            // 创建 WebDAV 客户端
-            const client = window.WebDAV.createClient(
-                webdavConfig.serverUrl, // WebDAV 服务器地址
-                {
-                    username: webdavConfig.username,
-                    password: webdavConfig.password
-                }
-            );
-            console.log('webdavConfig', webdavConfig)
-            let files = await client.getDirectoryContents(webdavConfig.backupPath).then(files => {
-                console.log("文件列表：", files);
-            })
             if (selectedPhotos.length === 0) {
                 showStatus('warning', '请先选择要备份的照片');
                 return;
@@ -542,62 +529,137 @@
                 return;
             }
 
-            // 显示进度条
-            progressContainer.classList.remove('hidden');
-            progressBar.style.width = '0%';
-            progressPercent.textContent = '0%';
-            progressText.textContent = `正在备份 1/${selectedPhotos.length}`;
+            // 创建 WebDAV 客户端
+            const client = window.WebDAV.createClient(
+                webdavConfig.serverUrl,
+                {
+                    username: webdavConfig.username,
+                    password: webdavConfig.password
+                }
+            );
 
-            // 禁用备份按钮
-            backupBtn.disabled = true;
+            try {
+                // 1. 检查WebDAV配置是否正常
+                showStatus('info', '正在连接WebDAV服务器...');
+                await client.exists('/'); // 测试连接
+                
+                // 2. 检查配置的路径是否存在，不存在就创建目录
+                const backupPath = webdavConfig.backupPath || '/Photos/Backup';
+                const pathExists = await client.exists(backupPath);
+                
+                if (!pathExists) {
+                    showStatus('info', `创建目录: ${backupPath}`);
+                    await client.createDirectory(backupPath, { recursive: true });
+                }
 
-            // 模拟备份过程 (实际项目中应替换为真实的WebDAV上传逻辑)
-            let completed = 0;
-            const total = selectedPhotos.length;
+                // 3. 开始上传文件
+                showStatus('info', '开始上传文件...');
+                
+                // 显示进度条
+                progressContainer.classList.remove('hidden');
+                progressBar.style.width = '0%';
+                progressPercent.textContent = '0%';
+                progressText.textContent = `正在备份 1/${selectedPhotos.length}`;
 
-            const simulateBackup = () => {
-                if (completed < total) {
-                    // 模拟每张照片需要1-2秒上传时间
-                    setTimeout(() => {
+                // 禁用备份按钮
+                backupBtn.disabled = true;
+
+                let completed = 0;
+                const total = selectedPhotos.length;
+                let successCount = 0;
+                let skipCount = 0;
+
+                // 逐个上传文件
+                for (let i = 0; i < selectedPhotos.length; i++) {
+                    const file = selectedPhotos[i];
+                    const remoteFilePath = `${backupPath}/${file.name}`;
+                    
+                    try {
+                        // 检查文件是否已存在
+                        const fileExists = await client.exists(remoteFilePath);
+                        
+                        if (fileExists) {
+                            // 文件已存在，询问是否覆盖
+                            const shouldOverwrite = confirm(`文件 "${file.name}" 已存在，是否覆盖？`);
+                            if (!shouldOverwrite) {
+                                skipCount++;
+                                completed++;
+                                continue;
+                            }
+                        }
+
+                        // 读取文件内容并上传
+                        const arrayBuffer = await file.arrayBuffer();
+                        await client.putFileContents(remoteFilePath, arrayBuffer, {
+                            onUploadProgress: (progress) => {
+                                const filePercent = Math.round((progress.loaded / progress.total) * 100);
+                                progressText.textContent = `正在上传 ${file.name} (${filePercent}%)`;
+                            }
+                        });
+
+                        successCount++;
                         completed++;
+                        
+                        // 更新进度条
                         const percent = Math.round((completed / total) * 100);
                         progressBar.style.width = `${percent}%`;
                         progressPercent.textContent = `${percent}%`;
                         progressText.textContent = `正在备份 ${completed}/${total}`;
-
-                        simulateBackup();
-                    }, 1000 + Math.random() * 1000);
-                } else {
-                    // 备份完成
-                    progressText.textContent = '备份完成';
-
-                    // 记录备份历史
-                    addBackupRecord(total);
-
-                    // 显示成功消息
-                    showStatus('success', `成功备份 ${total} 张照片`);
-
-                    // 清空选择的照片
-                    selectedPhotos = [];
-                    photoPreview.innerHTML = `
-                        <div class="col-span-3 text-center py-8 text-gray-500">
-                            <i class="fa fa-picture-o text-4xl mb-2 opacity-30"></i>
-                            <p>选择照片后将显示在这里</p>
-                        </div>
-                    `;
-
-                    // 重置进度条
-                    setTimeout(() => {
-                        progressContainer.classList.add('hidden');
-                        progressBar.style.width = '0%';
-                    }, 2000);
-
-                    // 更新备份按钮状态
-                    updateBackupButtonState();
+                        
+                    } catch (uploadError) {
+                        console.error(`上传文件 ${file.name} 失败:`, uploadError);
+                        completed++;
+                        
+                        // 更新进度条
+                        const percent = Math.round((completed / total) * 100);
+                        progressBar.style.width = `${percent}%`;
+                        progressPercent.textContent = `${percent}%`;
+                        progressText.textContent = `正在备份 ${completed}/${total}`;
+                    }
                 }
-            };
 
-            simulateBackup();
+                // 备份完成
+                progressText.textContent = '备份完成';
+
+                // 记录备份历史
+                addBackupRecord(successCount);
+
+                // 显示成功消息
+                let message = `备份完成！成功: ${successCount} 张`;
+                if (skipCount > 0) {
+                    message += `, 跳过: ${skipCount} 张`;
+                }
+                showStatus('success', message);
+
+                // 清空选择的照片
+                selectedPhotos = [];
+                photoPreview.innerHTML = `
+                    <div class="col-span-3 text-center py-8 text-gray-500">
+                        <i class="fa fa-picture-o text-4xl mb-2 opacity-30"></i>
+                        <p>选择照片后将显示在这里</p>
+                    </div>
+                `;
+
+                // 重置进度条
+                setTimeout(() => {
+                    progressContainer.classList.add('hidden');
+                    progressBar.style.width = '0%';
+                }, 3000);
+
+                // 更新备份按钮状态
+                updateBackupButtonState();
+
+            } catch (error) {
+                console.error('备份过程中发生错误:', error);
+                showStatus('error', `备份失败: ${error.message}`);
+                
+                // 重置进度条
+                progressContainer.classList.add('hidden');
+                progressBar.style.width = '0%';
+                
+                // 重新启用备份按钮
+                backupBtn.disabled = false;
+            }
         }
 
         // 更新备份按钮状态
