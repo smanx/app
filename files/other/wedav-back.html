@@ -552,42 +552,60 @@
                     await client.createDirectory(backupPath, { recursive: true });
                 }
 
-                // 3. 开始上传文件
+                // 3. 检查重复文件并统一确认覆盖
+                showStatus('info', '检查重复文件...');
+                const duplicateFiles = [];
+                const uniqueFiles = [];
+                
+                for (const file of selectedPhotos) {
+                    const remoteFilePath = `${backupPath}/${file.name}`;
+                    const fileExists = await client.exists(remoteFilePath);
+                    if (fileExists) {
+                        duplicateFiles.push(file);
+                    } else {
+                        uniqueFiles.push(file);
+                    }
+                }
+
+                let shouldOverwriteAll = true;
+                if (duplicateFiles.length > 0) {
+                    // 统一确认是否覆盖所有重复文件
+                    const fileNames = duplicateFiles.map(f => f.name).join(', ');
+                    const message = `以下 ${duplicateFiles.length} 个文件已存在：\n${fileNames}\n\n是否覆盖所有重复文件？\n点击"确定"覆盖所有，点击"取消"跳过所有重复文件。`;
+                    shouldOverwriteAll = confirm(message);
+                }
+
+                // 分离需要上传的文件
+                let filesToUpload = shouldOverwriteAll ? [...selectedPhotos] : uniqueFiles;
+                
+                if (filesToUpload.length === 0) {
+                    showStatus('warning', '没有需要上传的文件');
+                    return;
+                }
+
+                // 4. 开始上传文件
                 showStatus('info', '开始上传文件...');
                 
                 // 显示进度条
                 progressContainer.classList.remove('hidden');
                 progressBar.style.width = '0%';
                 progressPercent.textContent = '0%';
-                progressText.textContent = `正在备份 1/${selectedPhotos.length}`;
+                progressText.textContent = `正在备份 1/${filesToUpload.length}`;
 
                 // 禁用备份按钮
                 backupBtn.disabled = true;
 
                 let completed = 0;
-                const total = selectedPhotos.length;
+                const total = filesToUpload.length;
                 let successCount = 0;
-                let skipCount = 0;
+                let skipCount = shouldOverwriteAll ? 0 : duplicateFiles.length;
 
                 // 逐个上传文件
-                for (let i = 0; i < selectedPhotos.length; i++) {
-                    const file = selectedPhotos[i];
+                for (let i = 0; i < filesToUpload.length; i++) {
+                    const file = filesToUpload[i];
                     const remoteFilePath = `${backupPath}/${file.name}`;
                     
                     try {
-                        // 检查文件是否已存在
-                        const fileExists = await client.exists(remoteFilePath);
-                        
-                        if (fileExists) {
-                            // 文件已存在，询问是否覆盖
-                            const shouldOverwrite = confirm(`文件 "${file.name}" 已存在，是否覆盖？`);
-                            if (!shouldOverwrite) {
-                                skipCount++;
-                                completed++;
-                                continue;
-                            }
-                        }
-
                         // 读取文件内容并上传
                         const arrayBuffer = await file.arrayBuffer();
                         await client.putFileContents(remoteFilePath, arrayBuffer, {
