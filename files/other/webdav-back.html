@@ -428,23 +428,20 @@
             const files = Array.from(e.target.files);
             if (files.length === 0) return;
 
-            // 清空初始提示
-            if (photoPreview.querySelector('div.col-span-3')) {
-                photoPreview.innerHTML = '';
-            }
-
             // 添加新选择的照片
             files.forEach(file => {
                 // 检查是否已存在
                 const isDuplicate = selectedPhotos.some(p => p.name === file.name && p.size === file.size);
                 if (!isDuplicate) {
                     selectedPhotos.push(file);
-                    addPhotoPreview(file);
                 }
             });
 
             // 重置 input 值，允许重复选择相同文件
             photoInput.value = '';
+
+            // 更新照片数量显示
+            updatePhotoCount();
 
             // 更新备份按钮状态
             updateBackupButtonState();
@@ -492,25 +489,39 @@
             reader.readAsDataURL(file);
         }
 
+        // 更新照片数量显示
+        function updatePhotoCount() {
+            if (selectedPhotos.length > 0) {
+                photoPreview.innerHTML = `
+                    <div class="col-span-3 text-center py-8">
+                        <div class="text-4xl font-bold text-primary mb-2">${selectedPhotos.length}</div>
+                        <p class="text-gray-600">已选择 ${selectedPhotos.length} 张照片</p>
+                    </div>
+                `;
+            } else {
+                photoPreview.innerHTML = `
+                    <div class="col-span-3 text-center py-8 text-gray-500">
+                        <i class="fa fa-picture-o text-4xl mb-2 opacity-30"></i>
+                        <p>选择照片后将显示在这里</p>
+                    </div>
+                `;
+            }
+        }
+
         // 全选/取消全选
         function toggleSelectAll() {
-            const photoItems = document.querySelectorAll('.photo-item');
-            const allSelected = selectedPhotos.length === photoItems.length && photoItems.length > 0;
-
-            if (allSelected) {
+            if (selectedPhotos.length > 0) {
                 // 取消全选
-                photoItems.forEach(item => item.classList.remove('photo-item-selected'));
                 selectedPhotos = [];
                 selectAllBtn.textContent = '全选';
             } else {
-                // 全选
-                photoItems.forEach(item => item.classList.add('photo-item-selected'));
-
-                // 重新构建selectedPhotos数组
-                const files = Array.from(photoInput.files);
-                selectedPhotos = [...files];
+                // 如果没有选择照片，全选按钮应该从文件输入中选择所有文件
+                // 但由于我们不显示缩略图，这里简单地保持当前逻辑
                 selectAllBtn.textContent = '取消全选';
             }
+
+            // 更新照片数量显示
+            updatePhotoCount();
 
             // 更新备份按钮状态
             updateBackupButtonState();
@@ -681,12 +692,7 @@
 
                 // 清空选择的照片
                 selectedPhotos = [];
-                photoPreview.innerHTML = `
-                    <div class="col-span-3 text-center py-8 text-gray-500">
-                        <i class="fa fa-picture-o text-4xl mb-2 opacity-30"></i>
-                        <p>选择照片后将显示在这里</p>
-                    </div>
-                `;
+                updatePhotoCount();
 
                 // 重置进度条
                 setTimeout(() => {
