@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliproxy Account Cleaner v1.2</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #eef6ff 0%, #dbeafe 100%);
+            min-height: 100vh;
+            color: #0f172a;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #bfdbfe;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            color: #1e40af;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .status-bar {
+            background: #e0f2fe;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .status-text {
+            flex: 1;
+            min-width: 200px;
+        }
+        .brand {
+            color: #1e3a8a;
+            font-size: 0.85rem;
+        }
+        .panel {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            color: #334155;
+            white-space: nowrap;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group input[type="number"] {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            min-width: 80px;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="password"]:focus,
+        .form-group input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        .form-group input[type="text"].wide { min-width: 280px; }
+        .form-group input[type="password"].medium { min-width: 200px; }
+        .form-group select {
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-secondary {
+            background: #8fa7bf;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7a9ab5;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 0;
+            align-items: center;
+        }
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        thead {
+            background: #dbeafe;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        tr:hover {
+            background: #f8fafc;
+        }
+        tr.selected {
+            background: #eff6ff;
+        }
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+        .checkbox-cell input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-unknown { background: #fef3c7; color: #92400e; }
+        .status-closed { background: #e2e8f0; color: #475569; }
+        .status-401 { background: #fecaca; color: #991b1b; }
+        .status-quota { background: #fed7aa; color: #9a3412; }
+        .progress-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s;
+        }
+        .auto-status {
+            margin-top: 10px;
+            padding: 8px;
+            background: #f0fdf4;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #166534;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-body {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .action-progress {
+            color: #3b82f6;
+            font-weight: 500;
+            margin-left: auto;
+        }
+        .usage-info {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        @media (max-width: 768px) {
+            .form-row { flex-direction: column; align-items: flex-start; }
+            .form-group { width: 100%; }
+            .form-group input[type="text"].wide { min-width: 100%; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cliproxy Account Cleaner v1.2</h1>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" onclick="refreshAccounts()">刷新</button>
+                <button class="btn btn-secondary" onclick="saveConfig()">保存配置</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-text" id="statusText">正在加载...</div>
+            <div class="brand">海十Mirage的AI工具 ai.hsnb.fun</div>
+        </div>
+
+        <!-- 基础参数 -->
+        <div class="panel">
+            <div class="panel-title">基础参数</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>服务地址(base_url)</label>
+                    <input type="text" id="baseUrl" class="wide" placeholder="http://localhost:8080">
+                </div>
+                <div class="form-group">
+                    <label>令牌(token)</label>
+                    <input type="password" id="token" class="medium" placeholder="输入令牌">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>401并发(workers)</label>
+                    <input type="number" id="workers" value="120" min="1" max="500" style="width:80px">
+                </div>
+                <div class="form-group">
+                    <label>额度并发</label>
+                    <input type="number" id="quotaWorkers" value="100" min="1" max="500" style="width:80px">
+                </div>
+                <div class="form-group">
+                    <label>删除并发</label>
+                    <input type="number" id="deleteWorkers" value="20" min="1" max="100" style="width:80px">
+                </div>
+                <div class="form-group">
+                    <label>周额度阈值(%)</label>
+                    <input type="number" id="weeklyThreshold" value="95" min="0" max="100" style="width:70px">
+                </div>
+                <div class="form-group">
+                    <label>5小时额度阈值(%)</label>
+                    <input type="number" id="primaryThreshold" value="95" min="0" max="100" style="width:70px">
+                </div>
+            </div>
+        </div>
+
+        <!-- 定时检测 -->
+        <div class="panel">
+            <div class="panel-title">定时检测</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <input type="checkbox" id="autoEnabled">
+                    <label for="autoEnabled">启用定时任务</label>
+                </div>
+                <div class="form-group">
+                    <label>间隔(分钟)</label>
+                    <input type="number" id="autoInterval" value="30" min="1" max="1440" style="width:70px">
+                </div>
+                <div class="form-group">
+                    <label>401账号操作</label>
+                    <select id="auto401Action">
+                        <option value="删除">删除</option>
+                        <option value="仅标记">仅标记</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>无额度账号操作</label>
+                    <select id="autoQuotaAction">
+                        <option value="关闭">关闭</option>
+                        <option value="删除">删除</option>
+                        <option value="仅标记">仅标记</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="startAutoCheck()">启动定时任务</button>
+                <button class="btn btn-danger" onclick="stopAutoCheck()">停止定时任务</button>
+            </div>
+            <div class="auto-status" id="autoStatus">定时任务：未启动</div>
+        </div>
+
+        <!-- 过滤器 -->
+        <div class="filter-bar">
+            <div class="form-group">
+                <label>搜索过滤:</label>
+                <input type="text" id="filterText" placeholder="账号/邮箱/错误信息..." style="width:200px" oninput="applyFilter()">
+            </div>
+            <div class="form-group">
+                <label>Provider:</label>
+                <select id="filterProvider" onchange="applyFilter()">
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>状态过滤:</label>
+                <select id="filterStatus" onchange="applyFilter()">
+                    <option value="all">全部</option>
+                    <option value="error">错误</option>
+                    <option value="active">活跃</option>
+                    <option value="unknown">未知</option>
+                    <option value="closed">已关闭</option>
+                    <option value="401">401失效</option>
+                    <option value="quota">无额度</option>
+                </select>
+            </div>
+            <span id="filterStats" style="margin-left:15px;font-size:0.85rem;color:#64748b;"></span>
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <button class="btn btn-secondary" onclick="selectAll()">全选</button>
+            <button class="btn btn-secondary" onclick="selectNone()">全不选</button>
+            <button class="btn btn-primary" onclick="check401()">检查401</button>
+            <button class="btn btn-primary" onclick="checkQuota()">检查额度</button>
+            <button class="btn btn-primary" onclick="checkBoth()">检查401+额度</button>
+            <button class="btn btn-warning" onclick="closeSelected()">关闭选中</button>
+            <button class="btn btn-success" onclick="recoverClosed()">恢复已关闭</button>
+            <button class="btn btn-danger" onclick="deleteSelected()">永久删除</button>
+            <span class="action-progress" id="actionProgress"></span>
+        </div>
+
+        <!-- 账号列表 -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-cell"><input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckbox()"></th>
+                        <th style="min-width:200px">账号/邮箱</th>
+                        <th style="width:100px">状态</th>
+                        <th style="min-width:300px">额度信息</th>
+                        <th style="min-width:200px">错误信息</th>
+                    </tr>
+                </thead>
+                <tbody id="accountTable">
+                    <tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">请先配置服务地址和令牌，然后点击"刷新"加载账号列表</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="progress-bar" id="progressBar" style="display:none">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <div class="modal-header" id="confirmTitle">确认</div>
+            <div class="modal-body" id="confirmBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConfirm(false)">取消</button>
+                <button class="btn btn-primary" onclick="closeConfirm(true)">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息对话框 -->
+    <div class="modal" id="messageModal">
+        <div class="modal-content">
+            <div class="modal-header" id="messageTitle">消息</div>
+            <div class="modal-body" id="messageBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeMessage()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 状态管理
+        let allAccounts = [];
+        let filteredAccounts = [];
+        let config = {};
+        let autoCheckTimer = null;
+        let confirmCallback = null;
+
+        // 默认配置
+        const DEFAULT_CONFIG = {
+            workers: 120,
+            quotaWorkers: 100,
+            deleteWorkers: 20,
+            weeklyThreshold: 95,
+            primaryThreshold: 95,
+            autoInterval: 30,
+            auto401Action: '删除',
+            autoQuotaAction: '关闭'
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            updateStatus('就绪 - 请配置服务地址和令牌');
+        });
+
+        // 加载配置
+        function loadConfig() {
+            try {
+                const saved = localStorage.getItem('cliproxyConfig');
+                config = saved ? JSON.parse(saved) : {...DEFAULT_CONFIG};
+            } catch (e) {
+                config = {...DEFAULT_CONFIG};
+            }
+
+            document.getElementById('baseUrl').value = config.baseUrl || '';
+            document.getElementById('token').value = config.token || '';
+            document.getElementById('workers').value = config.workers || DEFAULT_CONFIG.workers;
+            document.getElementById('quotaWorkers').value = config.quotaWorkers || DEFAULT_CONFIG.quotaWorkers;
+            document.getElementById('deleteWorkers').value = config.deleteWorkers || DEFAULT_CONFIG.deleteWorkers;
+            document.getElementById('weeklyThreshold').value = config.weeklyThreshold || DEFAULT_CONFIG.weeklyThreshold;
+            document.getElementById('primaryThreshold').value = config.primaryThreshold || DEFAULT_CONFIG.primaryThreshold;
+            document.getElementById('autoEnabled').checked = config.autoEnabled || false;
+            document.getElementById('autoInterval').value = config.autoInterval || DEFAULT_CONFIG.autoInterval;
+            document.getElementById('auto401Action').value = config.auto401Action || DEFAULT_CONFIG.auto401Action;
+            document.getElementById('autoQuotaAction').value = config.autoQuotaAction || DEFAULT_CONFIG.autoQuotaAction;
+            // 加载搜索过滤条件
+            document.getElementById('filterText').value = config.filterText || '';
+            document.getElementById('filterStatus').value = config.filterStatus || 'all';
+            // filterProvider 在账号加载后由 updateProviderOptions 设置
+        }
+
+        // 保存配置
+        function saveConfig() {
+            config = {
+                baseUrl: normalizeBaseUrl(document.getElementById('baseUrl').value),
+                token: document.getElementById('token').value.trim(),
+                workers: parseInt(document.getElementById('workers').value) || DEFAULT_CONFIG.workers,
+                quotaWorkers: parseInt(document.getElementById('quotaWorkers').value) || DEFAULT_CONFIG.quotaWorkers,
+                deleteWorkers: parseInt(document.getElementById('deleteWorkers').value) || DEFAULT_CONFIG.deleteWorkers,
+                weeklyThreshold: parseInt(document.getElementById('weeklyThreshold').value) || DEFAULT_CONFIG.weeklyThreshold,
+                primaryThreshold: parseInt(document.getElementById('primaryThreshold').value) || DEFAULT_CONFIG.primaryThreshold,
+                autoEnabled: document.getElementById('autoEnabled').checked,
+                autoInterval: parseInt(document.getElementById('autoInterval').value) || DEFAULT_CONFIG.autoInterval,
+                auto401Action: document.getElementById('auto401Action').value,
+                autoQuotaAction: document.getElementById('autoQuotaAction').value,
+                filterText: document.getElementById('filterText').value,
+                filterStatus: document.getElementById('filterStatus').value,
+                filterProvider: document.getElementById('filterProvider').value
+            };
+            localStorage.setItem('cliproxyConfig', JSON.stringify(config));
+            showMessage('保存成功', '配置已保存到本地存储');
+        }
+
+        // 标准化 URL
+        function normalizeBaseUrl(url) {
+            let s = (url || '').trim()
+                .replace(/：/g, ':')
+                .replace(/／/g, '/')
+                .replace(/。/g, '.')
+                .replace(/，/g, ',')
+                .replace(/；/g, ';')
+                .replace(/　/g, ' ')
+                .trim();
+            if (s.endsWith('/')) s = s.slice(0, -1);
+            return s;
+        }
+
+        // 更新状态
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+
+        // 显示进度
+        function setProgress(percent, text) {
+            const bar = document.getElementById('progressBar');
+            const fill = document.getElementById('progressFill');
+            if (percent !== null) {
+                bar.style.display = 'block';
+                fill.style.width = percent + '%';
+            } else {
+                bar.style.display = 'none';
+            }
+            document.getElementById('actionProgress').textContent = text || '';
+        }
+
+        // 确认对话框
+        function showConfirm(title, body) {
+            return new Promise(resolve => {
+                document.getElementById('confirmTitle').textContent = title;
+                document.getElementById('confirmBody').textContent = body;
+                document.getElementById('confirmModal').classList.add('show');
+                confirmCallback = resolve;
+            });
+        }
+
+        function closeConfirm(result) {
+            document.getElementById('confirmModal').classList.remove('show');
+            if (confirmCallback) {
+                confirmCallback(result);
+                confirmCallback = null;
+            }
+        }
+
+        // 消息对话框
+        function showMessage(title, body) {
+            document.getElementById('messageTitle').textContent = title;
+            document.getElementById('messageBody').textContent = body;
+            document.getElementById('messageModal').classList.add('show');
+        }
+
+        function closeMessage() {
+            document.getElementById('messageModal').classList.remove('show');
+        }
+
+        // API 请求封装
+        async function apiRequest(path, options = {}) {
+            const baseUrl = normalizeBaseUrl(config.baseUrl || document.getElementById('baseUrl').value);
+            const token = config.token || document.getElementById('token').value;
+
+            if (!baseUrl) throw new Error('请填写服务地址');
+            if (!token) throw new Error('请填写令牌');
+
+            const url = baseUrl + path;
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            const response = await fetch(url, { ...options, headers });
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+            }
+            return response.json();
+        }
+
+        // 刷新账号列表
+        async function refreshAccounts() {
+            try {
+                setProgress(10, '正在加载账号列表...');
+                updateStatus('正在从API加载账号列表...');
+
+                const data = await apiRequest('/v0/management/auth-files');
+                const files = data.files || [];
+
+                // 保留之前的检测结果
+                const prevById = {};
+                allAccounts.forEach(a => {
+                    const key = a.name || a.auth_index;
+                    if (key) prevById[key] = a;
+                });
+
+                allAccounts = files.map(f => {
+                    const identity = f.name || f.auth_index;
+                    const prev = prevById[identity] || {};
+                    const statusMsg = f.status_message || '';
+
+                    let errorInfo = '';
+                    let usageLimit = '';
+
+                    const rawStatus = f.status;
+                    let normalizedStatus = rawStatus || 'unknown';
+
+                    if (normalizedStatus === 'error' && statusMsg) {
+                        try {
+                            const parsed = JSON.parse(statusMsg);
+                            const err = parsed.error || {};
+                            errorInfo = err.message || statusMsg.substring(0, 150);
+                            if (err.type === 'usage_limit_reached' && err.resets_at) {
+                                usageLimit = `重置时间: ${formatTimestamp(err.resets_at)}`;
+                            }
+                        } catch (e) {
+                            errorInfo = statusMsg.substring(0, 150);
+                        }
+                    }
+
+                    return {
+                        name: f.name || '',
+                        account: f.account || f.email || '',
+                        status: normalizedStatus,
+                        errorInfo: errorInfo,
+                        usageLimit: usageLimit,
+                        auth_index: f.auth_index,
+                        provider: f.provider,
+                        type: f.type || f.typo,
+                        disabled: !!f.disabled,
+                        invalid_401: prev.invalid_401 || false,
+                        invalid_quota: prev.invalid_quota || false,
+                        used_percent: prev.used_percent,
+                        primary_used_percent: prev.primary_used_percent,
+                        primary_reset_at: prev.primary_reset_at,
+                        individual_used_percent: prev.individual_used_percent,
+                        individual_reset_at: prev.individual_reset_at,
+                        quota_source: prev.quota_source,
+                        reset_at: prev.reset_at,
+                        check_error: prev.check_error,
+                        selected: true,
+                        raw: f
+                    };
+                });
+
+                // 更新 provider 下拉选项
+                updateProviderOptions();
+
+                applyFilter();
+                updateStats();
+                setProgress(null, '');
+                updateStatus('加载完成');
+            } catch (e) {
+                setProgress(null, '');
+                updateStatus('加载失败: ' + e.message);
+                showMessage('加载失败', e.message);
+            }
+        }
+
+        // 更新 provider 下拉选项
+        function updateProviderOptions() {
+            const providers = [...new Set(allAccounts.map(a => a.provider).filter(Boolean))].sort();
+            const select = document.getElementById('filterProvider');
+            const currentValue = config.filterProvider || 'all';
+
+            select.innerHTML = '<option value="all">全部</option>';
+            providers.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                option.textContent = p;
+                if (p === currentValue) option.selected = true;
+                select.appendChild(option);
+            });
+
+            // 恢复之前的选择
+            if (currentValue && currentValue !== 'all') {
+                select.value = currentValue;
+            }
+        }
+
+        // 更新统计
+        function updateStats() {
+            const total = allAccounts.length;
+            const error = allAccounts.filter(a => a.status === 'error').length;
+            const active = allAccounts.filter(a => a.status === 'active').length;
+            const unknown = allAccounts.filter(a => !a.status || a.status === 'unknown').length;
+            const closed = allAccounts.filter(a => a.disabled).length;
+            updateStatus(`加载完成: 总共=${total} 错误=${error} 活跃=${active} 未知=${unknown} 已关闭=${closed}`);
+        }
+
+        // 格式化时间戳
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            try {
+                const d = new Date(ts * 1000);
+                return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // 显示状态
+        function displayStatus(account) {
+            if (account.disabled) return { text: '已关闭', class: 'status-closed' };
+            if (account.invalid_401) return { text: '401失效', class: 'status-401' };
+            if (account.invalid_quota) return { text: '无额度', class: 'status-quota' };
+            if (account.status === 'active') return { text: '活跃', class: 'status-active' };
+            if (account.status === 'error') return { text: '错误', class: 'status-error' };
+            return { text: '未知', class: 'status-unknown' };
+        }
+
+        // 显示额度
+        function displayUsage(account) {
+            const used = account.used_percent;
+            if (used !== undefined && used !== null) {
+                const parts = [`使用率: ${used}%`];
+                if (account.individual_used_percent !== undefined) {
+                    parts.push(`周: ${account.individual_used_percent}%`);
+                }
+                if (account.primary_used_percent !== undefined) {
+                    parts.push(`5小时: ${account.primary_used_percent}%`);
+                }
+                if (account.reset_at) {
+                    parts.push(`重置: ${formatTimestamp(account.reset_at)}`);
+                }
+                if (account.quota_source) {
+                    parts.push(`来源: ${account.quota_source}`);
+                }
+                return parts.join(' | ');
+            }
+            return account.usageLimit || '';
+        }
+
+        // 应用过滤器
+        function applyFilter() {
+            const text = (document.getElementById('filterText').value || '').toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+            const provider = document.getElementById('filterProvider').value;
+
+            // 保存过滤条件到本地存储
+            config.filterText = document.getElementById('filterText').value;
+            config.filterStatus = status;
+            config.filterProvider = provider;
+            localStorage.setItem('cliproxyConfig', JSON.stringify(config));
+
+            // 获取当前过滤后的账号名称集合
+            const filteredNames = new Set();
+
+            filteredAccounts = allAccounts.filter(account => {
+                // Provider 过滤
+                if (provider && provider !== 'all' && account.provider !== provider) return false;
+
+                // 状态过滤
+                if (status === 'error' && account.status !== 'error') return false;
+                if (status === 'active' && account.status !== 'active') return false;
+                if (status === 'unknown' && account.status && account.status !== 'unknown') return false;
+                if (status === 'closed' && !account.disabled) return false;
+                if (status === '401' && !account.invalid_401) return false;
+                if (status === 'quota' && (!account.invalid_quota || account.disabled)) return false;
+
+                // 文本过滤
+                if (text) {
+                    const search = [
+                        account.name,
+                        account.account,
+                        account.errorInfo,
+                        account.provider,
+                        account.type
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    if (!search.includes(text)) return false;
+                }
+
+                filteredNames.add(account.name);
+                return true;
+            });
+
+            // 取消不在过滤列表中的账号的勾选
+            allAccounts.forEach(account => {
+                if (account.selected && !filteredNames.has(account.name)) {
+                    account.selected = false;
+                }
+            });
+
+            renderTable();
+            updateFilterStats();
+        }
+
+        // 更新过滤器统计
+        function updateFilterStats() {
+            const total = allAccounts.length;
+            const filtered = filteredAccounts.length;
+            const selected = filteredAccounts.filter(a => a.selected).length;
+            const statsEl = document.getElementById('filterStats');
+            if (total > 0) {
+                statsEl.textContent = `列表: ${filtered}/${total} | 勾选: ${selected}`;
+            } else {
+                statsEl.textContent = '';
+            }
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('accountTable');
+            tbody.innerHTML = '';
+
+            if (filteredAccounts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#64748b">没有匹配的账号</td></tr>';
+                return;
+            }
+
+            filteredAccounts.forEach((account, idx) => {
+                const statusInfo = displayStatus(account);
+                const tr = document.createElement('tr');
+                tr.className = account.selected ? 'selected' : '';
+                tr.innerHTML = `
+                    <td class="checkbox-cell">
+                        <input type="checkbox" ${account.selected ? 'checked' : ''} onchange="toggleAccount(${idx})">
+                    </td>
+                    <td>${escapeHtml(account.account || account.name || '')}</td>
+                    <td><span class="status-badge ${statusInfo.class}">${statusInfo.text}</span></td>
+                    <td class="usage-info">${escapeHtml(displayUsage(account))}</td>
+                    <td>${escapeHtml((account.check_error || account.errorInfo || '').substring(0, 160))}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 切换账号选中
+        function toggleAccount(idx) {
+            filteredAccounts[idx].selected = !filteredAccounts[idx].selected;
+            renderTable();
+            updateFilterStats();
+        }
+
+        // 全选/全不选
+        function selectAll() {
+            filteredAccounts.forEach(a => a.selected = true);
+            renderTable();
+            updateFilterStats();
+        }
+
+        function selectNone() {
+            filteredAccounts.forEach(a => a.selected = false);
+            renderTable();
+            updateFilterStats();
+        }
+
+        function toggleAllCheckbox() {
+            const checked = document.getElementById('selectAllCheckbox').checked;
+            filteredAccounts.forEach(a => a.selected = checked);
+            renderTable();
+            updateFilterStats();
+        }
+
+        // 获取选中账号
+        function getSelectedNames() {
+            return filteredAccounts.filter(a => a.selected && a.name).map(a => a.name);
+        }
+
+        // 获取候选账号（只从勾选的账号中获取）
+        function getCandidates(onlyUnknown = false) {
+            const targetType = (config.targetType || '').toLowerCase();
+            const provider = (config.provider || '').toLowerCase();
+
+            return allAccounts.filter(account => {
+                // 只操作勾选的账号
+                if (!account.selected) return false;
+                if (account.disabled) return false;
+
+                // 允许任何状态的账号进行检测
+                // const status = (account.status || 'unknown').toLowerCase();
+                // if (onlyUnknown) {
+                //     if (status !== 'unknown' && status !== '') return false;
+                // } else {
+                //     if (status !== 'active' && status !== 'unknown' && status !== '') return false;
+                // }
+
+                const raw = account.raw || {};
+                const itemType = (raw.type || raw.typo || '').toLowerCase();
+                const itemProvider = (raw.provider || '').toLowerCase();
+
+                if (targetType && itemType !== targetType) return false;
+                if (provider && itemProvider !== provider) return false;
+                if (!raw.auth_index) return false;
+
+                return true;
+            }).map(a => a.raw);
+        }
+
+        // 并发执行 API 调用
+        async function parallelApiCalls(items, workerFn, concurrency, onProgress) {
+            const results = [];
+            let completed = 0;
+
+            const chunks = [];
+            for (let i = 0; i < items.length; i += concurrency) {
+                chunks.push(items.slice(i, i + concurrency));
+            }
+
+            for (const chunk of chunks) {
+                const chunkResults = await Promise.all(chunk.map(item => workerFn(item)));
+                results.push(...chunkResults);
+                completed += chunk.length;
+                if (onProgress) onProgress(completed, items.length);
+            }
+
+            return results;
+        }
+
+        // 检测 401
+        async function check401() {
+            if (allAccounts.length === 0) {
+                showMessage('提示', '当前账号列表为空，请先点击"刷新"加载账号');
+                return;
+            }
+
+            // 检查是否有勾选的账号
+            const selectedCount = allAccounts.filter(a => a.selected && !a.disabled).length;
+            if (selectedCount === 0) {
+                showMessage('提示', '没有勾选任何账号，请先勾选要检测的账号');
+                return;
+            }
+
+            const onlyUnknown = document.getElementById('filterStatus').value === 'unknown';
+            const candidates = getCandidates(onlyUnknown);
+
+            if (candidates.length === 0) {
+                showMessage('提示', '勾选的账号中没有符合条件的可检测账号');
+                return;
+            }
+
+            setProgress(0, `正在检查401... 候选=${candidates.length}`);
+
+            const workers = parseInt(document.getElementById('workers').value) || 120;
+
+            try {
+                const results = await parallelApiCalls(candidates, async (item) => {
+                    return await probeAccount(item);
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 100), `检查401进度: ${done}/${total}`);
+                });
+
+                // 更新账号状态
+                const byName = {};
+                results.forEach(r => { if (r.name) byName[r.name] = r; });
+
+                let invalidCount = 0;
+                let errorCount = 0;
+
+                allAccounts.forEach(account => {
+                    const r = byName[account.name];
+                    if (r) {
+                        account.invalid_401 = !!r.invalid_401;
+                        account.check_error = r.error;
+                        if (account.invalid_401) invalidCount++;
+                        if (r.error) errorCount++;
+                    }
+                });
+
+                applyFilter();
+                setProgress(null, `401检测完成：失效=${invalidCount} 异常=${errorCount}`);
+                showMessage('401检测完成', `401失效: ${invalidCount}\n检测异常: ${errorCount}`);
+            } catch (e) {
+                setProgress(null, '401检测失败');
+                showMessage('401检测失败', e.message);
+            }
+        }
+
+        // 探测单个账号
+        async function probeAccount(item) {
+            const authIndex = item.auth_index;
+            const name = item.name || item.id;
+            const account = item.account || item.email || '';
+
+            const result = {
+                name: name,
+                account: account,
+                auth_index: authIndex,
+                provider: item.provider,
+                type: item.type || item.typo,
+                status_code: null,
+                invalid_401: false,
+                error: null
+            };
+
+            if (!authIndex) {
+                result.error = 'missing auth_index';
+                return result;
+            }
+
+            const chatgptAccountId = item.chatgpt_account_id || item.chatgptAccountId || item.account_id || item.accountId;
+
+            try {
+                const payload = {
+                    authIndex: authIndex,
+                    method: 'GET',
+                    url: 'https://chatgpt.com/backend-api/wham/usage',
+                    header: {
+                        'Authorization': 'Bearer $TOKEN$',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'codex_cli_rs/0.76.0',
+                        ...(chatgptAccountId ? { 'Chatgpt-Account-Id': chatgptAccountId } : {})
+                    }
+                };
+
+                const data = await apiRequest('/v0/management/api-call', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                result.status_code = data.status_code;
+                result.invalid_401 = (data.status_code === 401);
+                if (data.status_code === undefined) {
+                    result.error = 'missing status_code in api-call response';
+                }
+            } catch (e) {
+                result.error = e.message;
+            }
+
+            return result;
+        }
+
+        // 检测额度
+        async function checkQuota() {
+            if (allAccounts.length === 0) {
+                showMessage('提示', '当前账号列表为空，请先点击"刷新"加载账号');
+                return;
+            }
+
+            // 检查是否有勾选的账号
+            const selectedCount = allAccounts.filter(a => a.selected && !a.disabled).length;
+            if (selectedCount === 0) {
+                showMessage('提示', '没有勾选任何账号，请先勾选要检测的账号');
+                return;
+            }
+
+            // 先刷新
+            try {
+                await apiRequest('/v0/management/config.yaml');
+            } catch (e) {}
+
+            const onlyUnknown = document.getElementById('filterStatus').value === 'unknown';
+            const candidates = getCandidates(onlyUnknown);
+
+            if (candidates.length === 0) {
+                showMessage('提示', '勾选的账号中没有符合条件的可检测账号');
+                return;
+            }
+
+            setProgress(0, `正在检查额度... 候选=${candidates.length}`);
+
+            const workers = parseInt(document.getElementById('quotaWorkers').value) || 100;
+            const weeklyThreshold = parseInt(document.getElementById('weeklyThreshold').value) || 95;
+            const primaryThreshold = parseInt(document.getElementById('primaryThreshold').value) || 95;
+
+            try {
+                const results = await parallelApiCalls(candidates, async (item) => {
+                    return await checkQuotaOne(item, weeklyThreshold, primaryThreshold);
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 100), `检查额度进度: ${done}/${total}`);
+                });
+
+                // 更新账号状态
+                const byName = {};
+                results.forEach(r => { if (r.name) byName[r.name] = r; });
+
+                let quotaCount = 0;
+                let errorCount = 0;
+
+                allAccounts.forEach(account => {
+                    const r = byName[account.name];
+                    if (r) {
+                        account.invalid_quota = !!r.invalid_quota;
+                        account.used_percent = r.used_percent;
+                        account.primary_used_percent = r.primary_used_percent;
+                        account.primary_reset_at = r.primary_reset_at;
+                        account.individual_used_percent = r.individual_used_percent;
+                        account.individual_reset_at = r.individual_reset_at;
+                        account.quota_source = r.quota_source;
+                        account.reset_at = r.reset_at;
+                        account.check_error = r.error;
+                        if (account.invalid_quota) quotaCount++;
+                        if (r.error) errorCount++;
+                    }
+                });
+
+                applyFilter();
+                setProgress(null, `额度检测完成：无额度=${quotaCount} 异常=${errorCount}`);
+                showMessage('额度检测完成', `无额度: ${quotaCount}\n检测异常: ${errorCount}`);
+            } catch (e) {
+                setProgress(null, '额度检测失败');
+                showMessage('额度检测失败', e.message);
+            }
+        }
+
+        // 检测单个账号额度
+        async function checkQuotaOne(item, weeklyThreshold, primaryThreshold) {
+            const authIndex = item.auth_index;
+            const name = item.name || item.id;
+            const account = item.account || item.email || '';
+
+            const result = {
+                name: name,
+                account: account,
+                auth_index: authIndex,
+                provider: item.provider,
+                type: item.type || item.typo,
+                status_code: null,
+                used_percent: null,
+                reset_at: null,
+                primary_used_percent: null,
+                primary_reset_at: null,
+                individual_used_percent: null,
+                individual_reset_at: null,
+                invalid_quota: false,
+                quota_source: null,
+                invalid_401: false,
+                error: null
+            };
+
+            if (!authIndex) {
+                result.error = 'missing auth_index';
+                return result;
+            }
+
+            const chatgptAccountId = item.chatgpt_account_id || item.chatgptAccountId || item.account_id || item.accountId;
+
+            try {
+                const payload = {
+                    authIndex: authIndex,
+                    method: 'GET',
+                    url: 'https://chatgpt.com/backend-api/wham/usage',
+                    header: {
+                        'Authorization': 'Bearer $TOKEN$',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'codex_cli_rs/0.76.0',
+                        ...(chatgptAccountId ? { 'Chatgpt-Account-Id': chatgptAccountId } : {})
+                    }
+                };
+
+                const data = await apiRequest('/v0/management/api-call', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                result.status_code = data.status_code;
+
+                if (data.status_code === 200) {
+                    let usageData = {};
+                    try {
+                        usageData = typeof data.body === 'string' ? JSON.parse(data.body) : (data.body || {});
+                    } catch (e) {}
+
+                    const rateLimit = usageData.rate_limit || usageData.rateLimit || {};
+
+                    // 解析窗口
+                    const windows = [];
+                    ['primary_window', 'secondary_window', 'individual_window', 'primaryWindow', 'secondaryWindow', 'individualWindow'].forEach(key => {
+                        const win = rateLimit[key];
+                        if (win && typeof win === 'object') {
+                            windows.push({
+                                name: key,
+                                used_percent: parsePercent(win.used_percent ?? win.usedPercent ?? win.used_percentage),
+                                reset_at: win.reset_at ?? win.resetAt,
+                                limit_window_seconds: win.limit_window_seconds ?? win.limitWindowSeconds ?? win.window_seconds ?? win.windowSeconds,
+                                remaining: win.remaining,
+                                limit_reached: win.limit_reached ?? win.limitReached
+                            });
+                        }
+                    });
+
+                    let weeklyWindow = windows.find(w => w.name.toLowerCase().includes('individual'));
+                    let shortWindow = windows.find(w => w.name.toLowerCase().includes('secondary'));
+
+                    // 按窗口时长排序
+                    const withSeconds = windows.filter(w => w.limit_window_seconds);
+                    if (!weeklyWindow && withSeconds.length) {
+                        weeklyWindow = withSeconds.reduce((a, b) => a.limit_window_seconds > b.limit_window_seconds ? a : b);
+                    }
+                    if (!shortWindow && withSeconds.length) {
+                        const sorted = [...withSeconds].sort((a, b) => a.limit_window_seconds - b.limit_window_seconds);
+                        shortWindow = sorted.find(w => w !== weeklyWindow) || sorted[0];
+                    }
+
+                    if (weeklyWindow) {
+                        result.individual_used_percent = weeklyWindow.used_percent;
+                        result.individual_reset_at = weeklyWindow.reset_at;
+                    }
+                    if (shortWindow) {
+                        result.primary_used_percent = shortWindow.used_percent;
+                        result.primary_reset_at = shortWindow.reset_at;
+                    }
+
+                    // 判断额度
+                    if (weeklyWindow && weeklyWindow.used_percent !== null) {
+                        result.used_percent = weeklyWindow.used_percent;
+                        result.quota_source = 'weekly';
+                        result.invalid_quota = weeklyWindow.used_percent >= weeklyThreshold;
+                    } else if (shortWindow && shortWindow.used_percent !== null) {
+                        result.used_percent = shortWindow.used_percent;
+                        result.quota_source = '5hour';
+                        result.invalid_quota = shortWindow.used_percent >= primaryThreshold;
+                    }
+
+                    result.reset_at = result.individual_reset_at || result.primary_reset_at;
+
+                } else if (data.status_code === 401) {
+                    result.invalid_401 = true;
+                }
+
+                if (data.status_code === undefined) {
+                    result.error = 'missing status_code';
+                }
+            } catch (e) {
+                result.error = e.message;
+            }
+
+            return result;
+        }
+
+        // 解析百分比
+        function parsePercent(v) {
+            if (v === null || v === undefined) return null;
+            if (typeof v === 'number') return v;
+            try {
+                const s = String(v).trim().replace(/%$/, '');
+                return s === '' ? null : parseFloat(s);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 联合检测
+        async function checkBoth() {
+            if (allAccounts.length === 0) {
+                showMessage('提示', '当前账号列表为空，请先点击"刷新"加载账号');
+                return;
+            }
+
+            // 检查是否有勾选的账号
+            const selectedCount = allAccounts.filter(a => a.selected && !a.disabled).length;
+            if (selectedCount === 0) {
+                showMessage('提示', '没有勾选任何账号，请先勾选要检测的账号');
+                return;
+            }
+
+            const onlyUnknown = document.getElementById('filterStatus').value === 'unknown';
+            const candidates = getCandidates(onlyUnknown);
+
+            if (candidates.length === 0) {
+                showMessage('提示', '勾选的账号中没有符合条件的可检测账号');
+                return;
+            }
+
+            setProgress(0, `正在联合检测... 候选=${candidates.length}`);
+
+            const workers = parseInt(document.getElementById('workers').value) || 120;
+            const quotaWorkers = parseInt(document.getElementById('quotaWorkers').value) || 100;
+            const weeklyThreshold = parseInt(document.getElementById('weeklyThreshold').value) || 95;
+            const primaryThreshold = parseInt(document.getElementById('primaryThreshold').value) || 95;
+
+            try {
+                // 401 检测
+                const probeResults = await parallelApiCalls(candidates, async (item) => {
+                    return await probeAccount(item);
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 50), `检查401进度: ${done}/${total}`);
+                });
+
+                // 额度检测
+                const quotaResults = await parallelApiCalls(candidates, async (item) => {
+                    return await checkQuotaOne(item, weeklyThreshold, primaryThreshold);
+                }, quotaWorkers, (done, total) => {
+                    setProgress(50 + Math.round(done / total * 50), `检查额度进度: ${done}/${total}`);
+                });
+
+                // 更新状态
+                const probeByName = {};
+                probeResults.forEach(r => { if (r.name) probeByName[r.name] = r; });
+                const quotaByName = {};
+                quotaResults.forEach(r => { if (r.name) quotaByName[r.name] = r; });
+
+                let count401 = 0, countQuota = 0, countErr = 0;
+
+                allAccounts.forEach(account => {
+                    const p = probeByName[account.name];
+                    const q = quotaByName[account.name];
+
+                    if (p) {
+                        account.invalid_401 = !!p.invalid_401;
+                        if (account.invalid_401) count401++;
+                        if (p.error) countErr++;
+                    }
+
+                    if (q) {
+                        account.invalid_quota = !!q.invalid_quota;
+                        account.used_percent = q.used_percent;
+                        account.primary_used_percent = q.primary_used_percent;
+                        account.primary_reset_at = q.primary_reset_at;
+                        account.individual_used_percent = q.individual_used_percent;
+                        account.individual_reset_at = q.individual_reset_at;
+                        account.quota_source = q.quota_source;
+                        account.reset_at = q.reset_at;
+                        if (account.invalid_quota) countQuota++;
+                        if (q.error) countErr++;
+                    }
+
+                    account.check_error = (q && q.error) || (p && p.error);
+                });
+
+                applyFilter();
+                setProgress(null, `联合检测完成：401=${count401} 无额度=${countQuota}`);
+                showMessage('联合检测完成', `401失效: ${count401}\n无额度: ${countQuota}\n检测异常: ${countErr}`);
+            } catch (e) {
+                setProgress(null, '联合检测失败');
+                showMessage('联合检测失败', e.message);
+            }
+        }
+
+        // 关闭选中账号
+        async function closeSelected() {
+            const names = getSelectedNames();
+            if (names.length === 0) {
+                showMessage('提示', '你没有选择任何账号');
+                return;
+            }
+
+            const confirmed = await showConfirm('确认关闭', `确定要关闭选中的 ${names.length} 个账号吗？\n\n将调用 PATCH /v0/management/auth-files/status`);
+            if (!confirmed) return;
+
+            setProgress(0, `正在关闭 ${names.length} 个账号...`);
+
+            const workers = parseInt(document.getElementById('deleteWorkers').value) || 20;
+            let ok = 0, fail = 0;
+
+            try {
+                const results = await parallelApiCalls(names, async (name) => {
+                    try {
+                        await apiRequest('/v0/management/auth-files/status', {
+                            method: 'PATCH',
+                            body: JSON.stringify({ name: name, disabled: true })
+                        });
+                        return { name, updated: true };
+                    } catch (e) {
+                        return { name, updated: false, error: e.message };
+                    }
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 100), `关闭进度: ${done}/${total}`);
+                });
+
+                results.forEach(r => r.updated ? ok++ : fail++);
+
+                setProgress(null, `关闭完成：成功=${ok} 失败=${fail}`);
+                if (fail > 0) {
+                    showMessage('关闭结果', `成功: ${ok}\n失败: ${fail}`);
+                } else {
+                    showMessage('关闭结果', `关闭成功：${ok} 个`);
+                }
+
+                await refreshAccounts();
+            } catch (e) {
+                setProgress(null, '关闭失败');
+                showMessage('关闭失败', e.message);
+            }
+        }
+
+        // 恢复已关闭账号
+        async function recoverClosed() {
+            if (allAccounts.length === 0) {
+                showMessage('提示', '当前账号列表为空，请先点击"刷新"加载账号');
+                return;
+            }
+
+            // 只恢复勾选的已关闭账号
+            const closedAccounts = allAccounts.filter(a => a.disabled && a.auth_index && a.selected);
+            if (closedAccounts.length === 0) {
+                showMessage('提示', '没有勾选的已关闭账号可恢复');
+                return;
+            }
+
+            const confirmed = await showConfirm('确认恢复', `将检测 ${closedAccounts.length} 个勾选的已关闭账号的额度与状态\n仅当状态正常且不满足"无额度"条件时，才会自动开启\n\n继续吗？`);
+            if (!confirmed) return;
+
+            setProgress(0, `正在检测已关闭账号...`);
+
+            const workers = parseInt(document.getElementById('workers').value) || 120;
+            const quotaWorkers = parseInt(document.getElementById('quotaWorkers').value) || 100;
+            const weeklyThreshold = parseInt(document.getElementById('weeklyThreshold').value) || 95;
+            const primaryThreshold = parseInt(document.getElementById('primaryThreshold').value) || 95;
+
+            try {
+                // 检测
+                const probeResults = await parallelApiCalls(closedAccounts.map(a => a.raw), async (item) => {
+                    return await probeAccount(item);
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 40), `检测401进度: ${done}/${total}`);
+                });
+
+                const quotaResults = await parallelApiCalls(closedAccounts.map(a => a.raw), async (item) => {
+                    return await checkQuotaOne(item, weeklyThreshold, primaryThreshold);
+                }, quotaWorkers, (done, total) => {
+                    setProgress(40 + Math.round(done / total * 40), `检测额度进度: ${done}/${total}`);
+                });
+
+                // 找出可恢复的
+                const probeByName = {};
+                probeResults.forEach(r => { if (r.name) probeByName[r.name] = r; });
+
+                const toEnable = quotaResults.filter(q => {
+                    const p = probeByName[q.name];
+                    return p && p.status_code === 200 && !p.invalid_401 && !p.error &&
+                           q.status_code === 200 && !q.invalid_quota && !q.error;
+                }).map(q => q.name);
+
+                // 开启账号
+                let enabledOk = 0, enabledFail = 0;
+
+                if (toEnable.length > 0) {
+                    const enableWorkers = parseInt(document.getElementById('deleteWorkers').value) || 20;
+                    const enableResults = await parallelApiCalls(toEnable, async (name) => {
+                        try {
+                            await apiRequest('/v0/management/auth-files/status', {
+                                method: 'PATCH',
+                                body: JSON.stringify({ name: name, disabled: false })
+                            });
+                            return { name, updated: true };
+                        } catch (e) {
+                            return { name, updated: false, error: e.message };
+                        }
+                    }, enableWorkers, (done, total) => {
+                        setProgress(80 + Math.round(done / total * 20), `开启进度: ${done}/${total}`);
+                    });
+
+                    enableResults.forEach(r => r.updated ? enabledOk++ : enabledFail++);
+                }
+
+                setProgress(null, `恢复完成：开启成功=${enabledOk} 失败=${enabledFail}`);
+                showMessage('恢复已关闭结果', `已关闭检测: ${closedAccounts.length}\n可恢复: ${toEnable.length}\n开启成功: ${enabledOk}\n开启失败: ${enabledFail}`);
+
+                await refreshAccounts();
+            } catch (e) {
+                setProgress(null, '恢复失败');
+                showMessage('恢复失败', e.message);
+            }
+        }
+
+        // 删除选中账号
+        async function deleteSelected() {
+            const names = getSelectedNames();
+            if (names.length === 0) {
+                showMessage('提示', '你没有选择任何账号');
+                return;
+            }
+
+            const confirmed = await showConfirm('确认删除', `确定要永久删除选中的 ${names.length} 个账号吗？\n\n此操作不可恢复！`);
+            if (!confirmed) return;
+
+            setProgress(0, `正在删除 ${names.length} 个账号...`);
+
+            const workers = parseInt(document.getElementById('deleteWorkers').value) || 20;
+            let ok = 0, fail = 0;
+
+            try {
+                const results = await parallelApiCalls(names, async (name) => {
+                    try {
+                        const encoded = encodeURIComponent(name);
+                        await apiRequest(`/v0/management/auth-files?name=${encoded}`, {
+                            method: 'DELETE'
+                        });
+                        return { name, deleted: true };
+                    } catch (e) {
+                        return { name, deleted: false, error: e.message };
+                    }
+                }, workers, (done, total) => {
+                    setProgress(Math.round(done / total * 100), `删除进度: ${done}/${total}`);
+                });
+
+                results.forEach(r => r.deleted ? ok++ : fail++);
+
+                setProgress(null, `删除完成：成功=${ok} 失败=${fail}`);
+                if (fail > 0) {
+                    showMessage('删除结果', `成功: ${ok}\n失败: ${fail}`);
+                } else {
+                    showMessage('删除结果', `删除成功：${ok} 个`);
+                }
+
+                await refreshAccounts();
+            } catch (e) {
+                setProgress(null, '删除失败');
+                showMessage('删除失败', e.message);
+            }
+        }
+
+        // 定时任务
+        function startAutoCheck() {
+            config.autoEnabled = true;
+            document.getElementById('autoEnabled').checked = true;
+            saveConfig();
+
+            const interval = parseInt(document.getElementById('autoInterval').value) || 30;
+            const action401 = document.getElementById('auto401Action').value;
+            const actionQuota = document.getElementById('autoQuotaAction').value;
+
+            document.getElementById('autoStatus').textContent = `定时任务已启动：每 ${interval} 分钟执行一次，401->${action401}，无额度->${actionQuota}`;
+            document.getElementById('autoStatus').style.background = '#dcfce7';
+            document.getElementById('autoStatus').style.color = '#166534';
+
+            // 立即执行一次
+            runAutoCheck();
+
+            // 设置定时器
+            if (autoCheckTimer) clearInterval(autoCheckTimer);
+            autoCheckTimer = setInterval(runAutoCheck, interval * 60 * 1000);
+        }
+
+        function stopAutoCheck() {
+            config.autoEnabled = false;
+            document.getElementById('autoEnabled').checked = false;
+            saveConfig();
+
+            if (autoCheckTimer) {
+                clearInterval(autoCheckTimer);
+                autoCheckTimer = null;
+            }
+
+            document.getElementById('autoStatus').textContent = '定时任务：已停止';
+            document.getElementById('autoStatus').style.background = '#f0fdf4';
+            document.getElementById('autoStatus').style.color = '#166534';
+        }
+
+        async function runAutoCheck() {
+            document.getElementById('autoStatus').textContent = '定时任务执行中：正在检测401和额度...';
+            document.getElementById('autoStatus').style.background = '#fef3c7';
+            document.getElementById('autoStatus').style.color = '#92400e';
+
+            try {
+                // 刷新账号列表
+                await refreshAccounts();
+
+                const candidates = getCandidates(false);
+                if (candidates.length === 0) {
+                    document.getElementById('autoStatus').textContent = '定时任务完成：没有可检测的账号';
+                    return;
+                }
+
+                const workers = parseInt(document.getElementById('workers').value) || 120;
+                const quotaWorkers = parseInt(document.getElementById('quotaWorkers').value) || 100;
+                const weeklyThreshold = parseInt(document.getElementById('weeklyThreshold').value) || 95;
+                const primaryThreshold = parseInt(document.getElementById('primaryThreshold').value) || 95;
+
+                // 执行检测
+                const probeResults = await parallelApiCalls(candidates, probeAccount, workers);
+                const quotaResults = await parallelApiCalls(candidates, (item) => checkQuotaOne(item, weeklyThreshold, primaryThreshold), quotaWorkers);
+
+                // 收集失效账号
+                const invalid401 = probeResults.filter(r => r.invalid_401).map(r => r.name);
+                const invalidQuota = quotaResults.filter(r => r.invalid_quota).map(r => r.name);
+
+                // 执行操作
+                const action401 = document.getElementById('auto401Action').value;
+                const actionQuota = document.getElementById('autoQuotaAction').value;
+                const deleteWorkers = parseInt(document.getElementById('deleteWorkers').value) || 20;
+
+                let deleted = 0, closed = 0;
+
+                if (action401 === '删除' && invalid401.length > 0) {
+                    const results = await parallelApiCalls(invalid401, async (name) => {
+                        try {
+                            const encoded = encodeURIComponent(name);
+                            await apiRequest(`/v0/management/auth-files?name=${encoded}`, { method: 'DELETE' });
+                            return { deleted: true };
+                        } catch (e) {
+                            return { deleted: false };
+                        }
+                    }, deleteWorkers);
+                    deleted += results.filter(r => r.deleted).length;
+                }
+
+                if (actionQuota === '删除' && invalidQuota.length > 0) {
+                    const results = await parallelApiCalls(invalidQuota, async (name) => {
+                        try {
+                            const encoded = encodeURIComponent(name);
+                            await apiRequest(`/v0/management/auth-files?name=${encoded}`, { method: 'DELETE' });
+                            return { deleted: true };
+                        } catch (e) {
+                            return { deleted: false };
+                        }
+                    }, deleteWorkers);
+                    deleted += results.filter(r => r.deleted).length;
+                } else if (actionQuota === '关闭' && invalidQuota.length > 0) {
+                    const results = await parallelApiCalls(invalidQuota, async (name) => {
+                        try {
+                            await apiRequest('/v0/management/auth-files/status', {
+                                method: 'PATCH',
+                                body: JSON.stringify({ name, disabled: true })
+                            });
+                            return { closed: true };
+                        } catch (e) {
+                            return { closed: false };
+                        }
+                    }, deleteWorkers);
+                    closed += results.filter(r => r.closed).length;
+                }
+
+                document.getElementById('autoStatus').textContent = `定时任务完成：401=${invalid401.length} 无额度=${invalidQuota.length} 删除=${deleted} 关闭=${closed}`;
+                document.getElementById('autoStatus').style.background = '#dcfce7';
+                document.getElementById('autoStatus').style.color = '#166534';
+
+            } catch (e) {
+                document.getElementById('autoStatus').textContent = `定时任务失败：${e.message}`;
+                document.getElementById('autoStatus').style.background = '#fee2e2';
+                document.getElementById('autoStatus').style.color = '#991b1b';
+            }
+        }
+    </script>
+</body>
+</html>
