@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM 输出速率测试工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --border-color: #2a2a3a;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 30px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .config-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .input-group input {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .models-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0 12px;
+            width: 300px;
+        }
+
+        .model-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .search-box input {
+            background: transparent;
+            border: none;
+            padding: 10px;
+            color: var(--text-primary);
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+        }
+
+        .search-box svg {
+            color: var(--text-secondary);
+        }
+
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .model-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .model-grid::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 3px;
+        }
+
+        .model-grid::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .model-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .model-item:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .model-item.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--accent-primary);
+        }
+
+        .model-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .model-name {
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .model-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .results-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .progress-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .progress-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 32px;
+            min-width: 400px;
+            width: min(92vw, 720px);
+            max-height: 85vh;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.45) rgba(255, 255, 255, 0.03);
+        }
+
+        .progress-card::-webkit-scrollbar,
+        .progress-running-list::-webkit-scrollbar,
+        .progress-model-summary::-webkit-scrollbar,
+        .progress-log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .progress-card::-webkit-scrollbar-track,
+        .progress-running-list::-webkit-scrollbar-track,
+        .progress-model-summary::-webkit-scrollbar-track,
+        .progress-log::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 999px;
+            margin: 6px 0;
+        }
+
+        .progress-card::-webkit-scrollbar-thumb,
+        .progress-running-list::-webkit-scrollbar-thumb,
+        .progress-model-summary::-webkit-scrollbar-thumb,
+        .progress-log::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.72), rgba(139, 92, 246, 0.72));
+            border-radius: 999px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            min-height: 36px;
+        }
+
+        .progress-card::-webkit-scrollbar-thumb:hover,
+        .progress-running-list::-webkit-scrollbar-thumb:hover,
+        .progress-model-summary::-webkit-scrollbar-thumb:hover,
+        .progress-log::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(129, 140, 248, 0.95), rgba(167, 139, 250, 0.95));
+            background-clip: padding-box;
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .progress-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar-container {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            height: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 8px;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .progress-details {
+            margin-top: 20px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .progress-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px 12px;
+        }
+
+        .progress-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .progress-stat-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .progress-panels {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+            gap: 16px;
+        }
+
+        .progress-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .progress-panel-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .progress-subpanel-title {
+            margin-top: 12px;
+            margin-bottom: 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .progress-running-list {
+            list-style: none;
+            display: grid;
+            gap: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.45) rgba(255, 255, 255, 0.03);
+        }
+
+        .progress-running-item {
+            border-radius: 12px;
+            padding: 12px;
+            background: rgba(99, 102, 241, 0.08);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .progress-running-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .progress-running-model {
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .progress-running-status {
+            white-space: nowrap;
+            color: var(--accent-secondary);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .progress-running-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .progress-model-summary {
+            list-style: none;
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.45) rgba(255, 255, 255, 0.03);
+        }
+
+        .progress-model-item {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-model-item-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .progress-model-name {
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .progress-model-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .progress-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.24);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+        }
+
+        .progress-log {
+            list-style: none;
+            display: grid;
+            gap: 10px;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.45) rgba(255, 255, 255, 0.03);
+        }
+
+        .progress-log-item {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .progress-log-item.success {
+            border-color: rgba(34, 197, 94, 0.28);
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .progress-log-item.error {
+            border-color: rgba(239, 68, 68, 0.28);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .progress-log-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .progress-log-model {
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        .progress-log-status {
+            white-space: nowrap;
+            color: var(--text-secondary);
+        }
+
+        .progress-log-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .progress-empty {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .test-config {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .config-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .config-row .input-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .results-table td {
+            font-size: 0.9rem;
+        }
+
+        .results-table tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .model-actions {
+                width: 100%;
+            }
+
+            .progress-card {
+                padding: 24px;
+                min-width: 0;
+            }
+
+            .progress-stats,
+            .progress-panels {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                width: 100%;
+            }
+
+            .btn-group .btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LLM 输出速率测试工具</h1>
+
+        <!-- 配置区域 -->
+        <div class="config-section">
+            <div class="config-grid">
+                <div class="input-group">
+                    <label>Base URL</label>
+                    <input type="text" id="baseUrl" placeholder="https://api.openai.com/v1" value="">
+                </div>
+                <div class="input-group">
+                    <label>API Token</label>
+                    <input type="password" id="apiToken" placeholder="sk-...">
+                </div>
+            </div>
+        </div>
+
+        <!-- 模型选择区域 -->
+        <div class="models-section">
+            <div class="section-header">
+                <span class="section-title">选择要测试的模型</span>
+                <div class="model-actions">
+                    <button class="btn btn-primary" id="loadModelsBtn">加载模型列表</button>
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <input type="text" id="searchInput" placeholder="搜索模型...">
+                    </div>
+                    <div class="btn-group">
+                    <button class="btn btn-secondary" id="selectAllBtn">全选</button>
+                    <button class="btn btn-secondary" id="deselectAllBtn">反选</button>
+                    </div>
+                </div>
+            </div>
+            <div id="modelList" class="model-grid">
+                <div class="empty-state">请先配置 API 并加载模型列表</div>
+            </div>
+            <div class="test-config" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <div class="config-row" style="align-items: flex-end;">
+                    <div class="input-group" style="flex: 2;">
+                        <label>测试提示词</label>
+                        <input type="text" id="testPrompt" value="请写一篇关于人工智能的短文，大约500字。">
+                    </div>
+                    <div class="input-group" style="flex: 0 0 120px;">
+                        <label>最大Tokens</label>
+                        <input type="number" id="maxTokens" value="500">
+                    </div>
+                    <div class="input-group" style="flex: 0 0 100px;">
+                        <label>重复次数</label>
+                        <input type="number" id="repeatCount" value="3" min="1" max="10">
+                    </div>
+                    <div class="input-group" style="flex: 0 0 100px;">
+                        <label>并发数</label>
+                        <input type="number" id="concurrency" value="3" min="1" max="20">
+                    </div>
+                    <span id="selectedCount" style="color: var(--text-secondary); white-space: nowrap;">已选 0 个模型</span>
+                    <button class="btn btn-primary" id="startTestBtn" disabled>开始测试</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="results-section">
+            <div class="section-header">
+                <span class="section-title">测试结果</span>
+                <button class="btn btn-secondary" id="exportBtn" disabled>导出结果</button>
+            </div>
+            <div id="resultsArea">
+                <div class="empty-state">测试结果将在这里显示</div>
+            </div>
+            <div class="chart-container hidden" id="chartContainer">
+                <canvas id="resultChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进度遮罩 -->
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-card">
+            <div class="progress-title" id="progressTitle">正在测试...</div>
+            <div class="progress-subtitle" id="progressSubtitle">准备建立测试队列...</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progressText">准备中...</div>
+            <div class="progress-details">
+                <div class="progress-stats">
+                    <div class="progress-stat">
+                        <div class="progress-stat-label">已完成</div>
+                        <div class="progress-stat-value" id="progressCompleted">0 / 0</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-stat-label">运行中</div>
+                        <div class="progress-stat-value" id="progressRunning">0</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-stat-label">成功</div>
+                        <div class="progress-stat-value" id="progressSuccess">0</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-stat-label">失败</div>
+                        <div class="progress-stat-value" id="progressFailed">0</div>
+                    </div>
+                </div>
+                <div class="progress-panels">
+                    <div class="progress-panel">
+                        <div class="progress-panel-title">并发运行中的模型</div>
+                        <ul class="progress-running-list" id="progressCurrentModel">
+                            <li class="progress-empty">等待任务开始...</li>
+                        </ul>
+                        <div class="progress-subpanel-title">各模型进度汇总</div>
+                        <ul class="progress-model-summary" id="progressCurrentMeta">
+                            <li class="progress-empty">开始测试后，这里会汇总每个模型的完成进度。</li>
+                        </ul>
+                    </div>
+                    <div class="progress-panel">
+                        <div class="progress-panel-title">最近结果</div>
+                        <ul class="progress-log" id="progressLog">
+                            <li class="progress-empty">测试开始后，这里会显示最近几条结果。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 状态管理
+        const state = {
+            models: [],
+            selectedModels: new Set(),
+            testResults: [],
+            isTesting: false,
+            chart: null
+        };
+
+        const STORAGE_KEY = 'llm-speed-test-config';
+
+        // DOM 元素
+        const elements = {
+            baseUrl: document.getElementById('baseUrl'),
+            apiToken: document.getElementById('apiToken'),
+            testPrompt: document.getElementById('testPrompt'),
+            maxTokens: document.getElementById('maxTokens'),
+            repeatCount: document.getElementById('repeatCount'),
+            concurrency: document.getElementById('concurrency'),
+            loadModelsBtn: document.getElementById('loadModelsBtn'),
+            modelList: document.getElementById('modelList'),
+            searchInput: document.getElementById('searchInput'),
+            selectAllBtn: document.getElementById('selectAllBtn'),
+            deselectAllBtn: document.getElementById('deselectAllBtn'),
+            selectedCount: document.getElementById('selectedCount'),
+            startTestBtn: document.getElementById('startTestBtn'),
+            resultsArea: document.getElementById('resultsArea'),
+            chartContainer: document.getElementById('chartContainer'),
+            exportBtn: document.getElementById('exportBtn'),
+            progressOverlay: document.getElementById('progressOverlay'),
+            progressTitle: document.getElementById('progressTitle'),
+            progressBar: document.getElementById('progressBar'),
+            progressText: document.getElementById('progressText'),
+            progressSubtitle: document.getElementById('progressSubtitle'),
+            progressCompleted: document.getElementById('progressCompleted'),
+            progressRunning: document.getElementById('progressRunning'),
+            progressSuccess: document.getElementById('progressSuccess'),
+            progressFailed: document.getElementById('progressFailed'),
+            progressCurrentModel: document.getElementById('progressCurrentModel'),
+            progressCurrentMeta: document.getElementById('progressCurrentMeta'),
+            progressLog: document.getElementById('progressLog')
+        };
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function normalizeDeltaText(value) {
+            if (!value) {
+                return '';
+            }
+
+            if (typeof value === 'string') {
+                return value;
+            }
+
+            if (Array.isArray(value)) {
+                return value.map(item => normalizeDeltaText(item)).join('');
+            }
+
+            if (typeof value === 'object') {
+                return normalizeDeltaText(
+                    value.text
+                    || value.content
+                    || value.reasoning
+                    || value.reasoning_content
+                    || value.output_text
+                    || value.thinking
+                );
+            }
+
+            return '';
+        }
+
+        function splitThinkTaggedContent(text) {
+            if (!text.includes('<think>')) {
+                return { answerText: text, reasoningText: '' };
+            }
+
+            let remaining = text;
+            let answerText = '';
+            let reasoningText = '';
+
+            while (remaining.length > 0) {
+                const start = remaining.indexOf('<think>');
+                if (start === -1) {
+                    answerText += remaining;
+                    break;
+                }
+
+                answerText += remaining.slice(0, start);
+                remaining = remaining.slice(start + '<think>'.length);
+
+                const end = remaining.indexOf('</think>');
+                if (end === -1) {
+                    reasoningText += remaining;
+                    break;
+                }
+
+                reasoningText += remaining.slice(0, end);
+                remaining = remaining.slice(end + '</think>'.length);
+            }
+
+            return { answerText, reasoningText };
+        }
+
+        function extractDeltaSegments(delta) {
+            if (!delta || typeof delta !== 'object') {
+                return { answerText: '', reasoningText: '' };
+            }
+
+            const answerParts = [];
+            const reasoningParts = [];
+
+            const contentValue = delta.content;
+            if (typeof contentValue === 'string') {
+                const splitContent = splitThinkTaggedContent(contentValue);
+                if (splitContent.answerText) {
+                    answerParts.push(splitContent.answerText);
+                }
+                if (splitContent.reasoningText) {
+                    reasoningParts.push(splitContent.reasoningText);
+                }
+            } else if (contentValue && !Array.isArray(contentValue)) {
+                answerParts.push(normalizeDeltaText(contentValue));
+            }
+
+            ['reasoning', 'reasoning_content', 'thinking'].forEach(key => {
+                if (Array.isArray(delta[key])) {
+                    return;
+                }
+
+                const text = normalizeDeltaText(delta[key]);
+                if (text) {
+                    reasoningParts.push(text);
+                }
+            });
+
+            const structuredSegments = [];
+            if (Array.isArray(delta.content)) {
+                structuredSegments.push(...delta.content);
+            }
+            if (Array.isArray(delta.reasoning)) {
+                structuredSegments.push(...delta.reasoning);
+            }
+            if (Array.isArray(delta.reasoning_content)) {
+                structuredSegments.push(...delta.reasoning_content);
+            }
+
+            structuredSegments.forEach(item => {
+                if (!item || typeof item !== 'object') {
+                    return;
+                }
+
+                const type = String(item.type || '').toLowerCase();
+                const text = normalizeDeltaText(item);
+                if (!text) {
+                    return;
+                }
+
+                if (type.includes('reason') || type.includes('think')) {
+                    reasoningParts.push(text);
+                    return;
+                }
+
+                if (type.includes('text') || type.includes('output')) {
+                    answerParts.push(text);
+                }
+            });
+
+            return {
+                answerText: answerParts.join(''),
+                reasoningText: reasoningParts.join('')
+            };
+        }
+
+        function updateProgressLog(entries) {
+            if (!entries.length) {
+                elements.progressLog.innerHTML = '<li class="progress-empty">测试开始后，这里会显示最近几条结果。</li>';
+                return;
+            }
+
+            elements.progressLog.innerHTML = entries.map(entry => {
+                const meta = entry.success
+                    ? `第 ${entry.round} 轮 · ${entry.metricModeLabel} · 可见首字 ${entry.visibleTtft}s · 回答首字 ${entry.ttft}s · 输出 ${entry.outputTokens} · 思考 ${entry.reasoningTokens || 0} · ${entry.tokensPerSecond} ${entry.rateUnit}`
+                    : `第 ${entry.round} 轮 · ${entry.error}`;
+
+                return `
+                    <li class="progress-log-item ${entry.success ? 'success' : 'error'}">
+                        <div class="progress-log-header">
+                            <span class="progress-log-model">${escapeHtml(entry.model)}</span>
+                            <span class="progress-log-status">${entry.success ? '完成' : '失败'}</span>
+                        </div>
+                        <div class="progress-log-meta">${escapeHtml(meta)}</div>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function renderRunningTasks(activeTasks, modelProgress, repeatCount) {
+            if (!activeTasks.length) {
+                elements.progressCurrentModel.innerHTML = '<li class="progress-empty">等待任务开始...</li>';
+            } else {
+                const progressByModel = new Map(modelProgress.map(item => [item.model, item]));
+                const runningItems = activeTasks
+                    .slice()
+                    .sort((a, b) => a.model.localeCompare(b.model) || a.round - b.round)
+                    .map(task => {
+                        const modelState = progressByModel.get(task.model) || { completed: 0, running: 0 };
+                        return `
+                            <li class="progress-running-item">
+                                <div class="progress-running-header">
+                                    <span class="progress-running-model">${escapeHtml(task.model)}</span>
+                                    <span class="progress-running-status">运行中</span>
+                                </div>
+                                <div class="progress-running-meta">
+                                    <span class="progress-chip">第 ${task.round} 轮</span>
+                                    <span class="progress-chip">已完成 ${modelState.completed}/${repeatCount}</span>
+                                    <span class="progress-chip">运行中 ${modelState.running}</span>
+                                </div>
+                            </li>
+                        `;
+                    })
+                    .join('');
+                elements.progressCurrentModel.innerHTML = runningItems;
+            }
+
+            if (!modelProgress.length) {
+                elements.progressCurrentMeta.innerHTML = '<li class="progress-empty">开始测试后，这里会汇总每个模型的完成进度。</li>';
+                return;
+            }
+
+            elements.progressCurrentMeta.innerHTML = modelProgress
+                .slice()
+                .sort((a, b) => a.model.localeCompare(b.model))
+                .map(item => `
+                    <li class="progress-model-item">
+                        <div class="progress-model-item-header">
+                            <span class="progress-model-name">${escapeHtml(item.model)}</span>
+                            <span class="progress-log-status">${item.completed}/${repeatCount}</span>
+                        </div>
+                        <div class="progress-model-stats">
+                            <span class="progress-chip">成功 ${item.success}</span>
+                            <span class="progress-chip">失败 ${item.failed}</span>
+                            <span class="progress-chip">运行中 ${item.running}</span>
+                        </div>
+                    </li>
+                `)
+                .join('');
+        }
+
+        function renderProgressSummary({ latestModel, latestRound, completedTests, totalTests, activeTests, successCount, failedCount, recentEntries, activeTasks, modelProgress, repeatCount }) {
+            elements.progressTitle.textContent = latestModel ? `最近有状态变化：${latestModel}` : '正在准备测试';
+            elements.progressSubtitle.textContent = latestModel
+                ? `最近有状态变化的是第 ${latestRound} 轮；当前共有 ${activeTasks.length} 个任务正在并发运行。`
+                : '正在建立测试队列并准备发起请求...';
+            elements.progressText.textContent = `整体进度 ${completedTests}/${totalTests} · 并发 ${activeTests}`;
+            elements.progressBar.style.width = `${totalTests ? (completedTests / totalTests) * 100 : 0}%`;
+            elements.progressCompleted.textContent = `${completedTests} / ${totalTests}`;
+            elements.progressRunning.textContent = String(activeTests);
+            elements.progressSuccess.textContent = String(successCount);
+            elements.progressFailed.textContent = String(failedCount);
+            renderRunningTasks(activeTasks, modelProgress, repeatCount);
+            updateProgressLog(recentEntries);
+        }
+
+        // 加载模型列表
+        async function loadModels() {
+            const baseUrl = elements.baseUrl.value.trim() || 'https://api.openai.com/v1';
+            const token = elements.apiToken.value.trim();
+
+            if (!token) {
+                alert('请输入 API Token');
+                return;
+            }
+
+            elements.loadModelsBtn.disabled = true;
+            elements.loadModelsBtn.textContent = '加载中...';
+
+            try {
+                const url = baseUrl.endsWith('/') ? baseUrl + 'models' : baseUrl + '/models';
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                state.models = data.data
+                    .filter(model => model.id && !model.id.includes(':'))
+                    .sort((a, b) => a.id.localeCompare(b.id));
+
+                const validIds = new Set(state.models.map(model => model.id));
+                state.selectedModels = new Set(
+                    Array.from(state.selectedModels).filter(modelId => validIds.has(modelId))
+                );
+
+                renderModelList();
+                elements.baseUrl.value = baseUrl;
+                saveConfig();
+            } catch (error) {
+                alert(`加载模型列表失败: ${error.message}`);
+            } finally {
+                elements.loadModelsBtn.disabled = false;
+                elements.loadModelsBtn.textContent = '加载模型列表';
+            }
+        }
+
+        // 渲染模型列表
+        function renderModelList(filter = '') {
+            const filterLower = filter.toLowerCase();
+            const filteredModels = state.models.filter(model =>
+                model.id.toLowerCase().includes(filterLower)
+            );
+
+            if (filteredModels.length === 0) {
+                elements.modelList.innerHTML = `<div class="empty-state">${filter ? '没有匹配的模型' : '请先配置 API 并加载模型列表'}</div>`;
+                return;
+            }
+
+            elements.modelList.innerHTML = filteredModels.map(model => `
+                <div class="model-item ${state.selectedModels.has(model.id) ? 'selected' : ''}" data-id="${model.id}">
+                    <input type="checkbox" ${state.selectedModels.has(model.id) ? 'checked' : ''}>
+                    <span class="model-name">${model.id}</span>
+                </div>
+            `).join('');
+
+            updateSelectedCount();
+        }
+
+        // 更新选中计数
+        function updateSelectedCount() {
+            const count = state.selectedModels.size;
+            elements.selectedCount.textContent = `已选择 ${count} 个模型`;
+            elements.startTestBtn.disabled = count === 0 || state.isTesting;
+        }
+
+        // 切换模型选择
+        function toggleModel(modelId) {
+            if (state.selectedModels.has(modelId)) {
+                state.selectedModels.delete(modelId);
+            } else {
+                state.selectedModels.add(modelId);
+            }
+            renderModelList(elements.searchInput.value);
+            saveConfig();
+        }
+
+        // 全选
+        function selectAll() {
+            const filter = elements.searchInput.value.toLowerCase();
+            state.models
+                .filter(m => m.id.toLowerCase().includes(filter))
+                .forEach(m => state.selectedModels.add(m.id));
+            renderModelList(filter);
+            saveConfig();
+        }
+
+        // 反选
+        function deselectAll() {
+            const filter = elements.searchInput.value.toLowerCase();
+            state.models
+                .filter(m => m.id.toLowerCase().includes(filter))
+                .forEach(m => {
+                    if (state.selectedModels.has(m.id)) {
+                        state.selectedModels.delete(m.id);
+                    } else {
+                        state.selectedModels.add(m.id);
+                    }
+                });
+            renderModelList(filter);
+            saveConfig();
+        }
+
+        // 测试单个模型
+        async function testModel(modelId, baseUrl, token, prompt, maxTokens) {
+            const startTime = performance.now();
+            let firstTokenTime = null;
+            let firstReasoningTime = null;
+            let outputChunks = 0;
+            let reasoningChunks = 0;
+            let usage = null;
+
+            try {
+                const url = baseUrl.endsWith('/') ? baseUrl + 'chat/completions' : baseUrl + '/chat/completions';
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: maxTokens,
+                        stream: true,
+                        stream_options: {
+                            include_usage: true
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const json = JSON.parse(data);
+                                if (json.usage && typeof json.usage === 'object') {
+                                    usage = json.usage;
+                                }
+
+                                const delta = json.choices?.[0]?.delta;
+                                const { answerText, reasoningText } = extractDeltaSegments(delta);
+
+                                if (reasoningText) {
+                                    reasoningChunks++;
+                                    if (firstReasoningTime === null) {
+                                        firstReasoningTime = performance.now();
+                                    }
+                                }
+
+                                if (answerText) {
+                                    outputChunks++;
+                                    if (firstTokenTime === null) {
+                                        firstTokenTime = performance.now();
+                                    }
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                const endTime = performance.now();
+                const totalTime = (endTime - startTime) / 1000;
+                const ttft = firstTokenTime ? (firstTokenTime - startTime) / 1000 : 0;
+                const reasoningTtft = firstReasoningTime ? (firstReasoningTime - startTime) / 1000 : null;
+                const visibleTtft = firstReasoningTime === null
+                    ? ttft
+                    : firstTokenTime === null
+                        ? reasoningTtft
+                        : Math.min(ttft, reasoningTtft);
+
+                const completionTokens = usage?.completion_tokens ?? usage?.output_tokens ?? null;
+                const promptTokens = usage?.prompt_tokens ?? usage?.input_tokens ?? null;
+                const totalTokens = usage?.total_tokens ?? (completionTokens !== null && promptTokens !== null ? completionTokens + promptTokens : null);
+                const reasoningTokenUsage = usage?.completion_tokens_details?.reasoning_tokens
+                    ?? usage?.output_tokens_details?.reasoning_tokens
+                    ?? null;
+
+                const hasTrueUsage = Number.isFinite(completionTokens);
+                const outputTokens = hasTrueUsage
+                    ? Math.max(0, completionTokens - (Number.isFinite(reasoningTokenUsage) ? reasoningTokenUsage : 0))
+                    : outputChunks;
+                const reasoningTokens = Number.isFinite(reasoningTokenUsage) ? reasoningTokenUsage : reasoningChunks;
+                const metricMode = hasTrueUsage ? 'usage' : 'chunk_fallback';
+                const metricModeLabel = hasTrueUsage ? '真 token' : '分片回退';
+                const rateUnit = hasTrueUsage ? 'token/s' : '片段/s';
+                const tokensPerSecond = outputTokens / totalTime;
+
+                return {
+                    model: modelId,
+                    success: true,
+                    outputTokens,
+                    reasoningTokens,
+                    outputChunks,
+                    reasoningChunks,
+                    totalTime,
+                    ttft,
+                    reasoningTtft,
+                    visibleTtft,
+                    tokensPerSecond,
+                    metricMode,
+                    metricModeLabel,
+                    rateUnit,
+                    promptTokens,
+                    completionTokens,
+                    totalTokens
+                };
+            } catch (error) {
+                return {
+                    model: modelId,
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // 开始测试
+        async function startTest() {
+            if (state.isTesting) {
+                return;
+            }
+
+            const baseUrl = elements.baseUrl.value.trim() || 'https://api.openai.com/v1';
+            const token = elements.apiToken.value.trim();
+            const prompt = elements.testPrompt.value.trim();
+            const maxTokens = parseInt(elements.maxTokens.value) || 500;
+            const repeatCount = parseInt(elements.repeatCount.value) || 3;
+            const concurrency = parseInt(elements.concurrency.value) || 3;
+
+            if (!token) {
+                alert('请输入 API Token');
+                return;
+            }
+
+            if (state.selectedModels.size === 0) {
+                alert('请选择至少一个模型');
+                return;
+            }
+
+            if (!Number.isInteger(repeatCount) || repeatCount < 1) {
+                alert('重复次数必须是大于等于 1 的整数');
+                return;
+            }
+
+            if (!Number.isInteger(concurrency) || concurrency < 1) {
+                alert('并发数必须是大于等于 1 的整数');
+                return;
+            }
+
+            state.isTesting = true;
+            state.testResults = [];
+            updateSelectedCount();
+            elements.progressOverlay.classList.add('active');
+
+            const modelsToTest = Array.from(state.selectedModels);
+            const totalTests = modelsToTest.length * repeatCount;
+            let completedTests = 0;
+            let activeTests = 0;
+            let failedTests = 0;
+            const recentEntries = [];
+            const activeTaskMap = new Map();
+            const failedResultsByModel = {};
+
+            const allResults = {};
+            modelsToTest.forEach(m => {
+                allResults[m] = [];
+                failedResultsByModel[m] = 0;
+            });
+
+            function getModelProgress() {
+                return modelsToTest.map(modelId => {
+                    const running = Array.from(activeTaskMap.values()).filter(task => task.model === modelId).length;
+                    const success = allResults[modelId].length;
+                    const failed = failedResultsByModel[modelId];
+
+                    return {
+                        model: modelId,
+                        running,
+                        success,
+                        failed,
+                        completed: success + failed
+                    };
+                });
+            }
+
+            function getActiveTasks() {
+                return Array.from(activeTaskMap.values()).map(task => ({
+                    ...task,
+                    completed: getModelProgress().find(item => item.model === task.model)?.completed || 0
+                }));
+            }
+
+            renderProgressSummary({
+                latestModel: '',
+                latestRound: 0,
+                completedTests,
+                totalTests,
+                activeTests,
+                successCount: 0,
+                failedCount: failedTests,
+                recentEntries,
+                activeTasks: [],
+                modelProgress: getModelProgress(),
+                repeatCount
+            });
+
+            // 创建任务队列：每个模型测试repeatCount次
+            const taskQueue = [];
+            for (const modelId of modelsToTest) {
+                for (let i = 0; i < repeatCount; i++) {
+                    taskQueue.push({ modelId, round: i + 1 });
+                }
+            }
+
+            // 更新进度的辅助函数
+            function updateProgress(modelId, round) {
+                const successCount = Object.values(allResults).flat().length;
+                renderProgressSummary({
+                    latestModel: modelId,
+                    latestRound: round,
+                    completedTests,
+                    totalTests,
+                    activeTests,
+                    successCount,
+                    failedCount: failedTests,
+                    recentEntries,
+                    activeTasks: getActiveTasks(),
+                    modelProgress: getModelProgress(),
+                    repeatCount
+                });
+            }
+
+            // 并发执行测试
+            async function runConcurrentTests() {
+                const tasks = [];
+
+                for (const task of taskQueue) {
+                    // 如果活动测试数达到并发上限，等待一个完成
+                    while (activeTests >= concurrency) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    if (!state.isTesting) break;
+
+                    activeTests++;
+                    activeTaskMap.set(`${task.modelId}::${task.round}`, {
+                        model: task.modelId,
+                        round: task.round
+                    });
+                    updateProgress(task.modelId, task.round);
+
+                    const testPromise = testModel(task.modelId, baseUrl, token, prompt, maxTokens)
+                        .then(result => {
+                            activeTaskMap.delete(`${task.modelId}::${task.round}`);
+                            if (result.success) {
+                                allResults[task.modelId].push(result);
+                                recentEntries.unshift({
+                                    model: task.modelId,
+                                    round: task.round,
+                                    success: true,
+                                    duration: result.totalTime.toFixed(2),
+                                    visibleTtft: result.visibleTtft.toFixed(3),
+                                    ttft: result.ttft.toFixed(3),
+                                    outputTokens: result.outputTokens,
+                                    reasoningTokens: result.reasoningTokens || 0,
+                                    tokensPerSecond: result.tokensPerSecond.toFixed(2),
+                                    metricModeLabel: result.metricModeLabel,
+                                    rateUnit: result.rateUnit
+                                });
+                            } else {
+                                failedTests++;
+                                failedResultsByModel[task.modelId]++;
+                                recentEntries.unshift({
+                                    model: task.modelId,
+                                    round: task.round,
+                                    success: false,
+                                    error: result.error
+                                });
+                            }
+                            recentEntries.splice(5);
+                            completedTests++;
+                            activeTests--;
+                            updateProgress(task.modelId, task.round);
+                        })
+                        .catch((error) => {
+                            activeTaskMap.delete(`${task.modelId}::${task.round}`);
+                            failedTests++;
+                            failedResultsByModel[task.modelId]++;
+                            recentEntries.unshift({
+                                model: task.modelId,
+                                round: task.round,
+                                success: false,
+                                error: error.message || '测试请求失败'
+                            });
+                            recentEntries.splice(5);
+                            completedTests++;
+                            activeTests--;
+                            updateProgress(task.modelId, task.round);
+                        });
+
+                    tasks.push(testPromise);
+                }
+
+                // 等待所有测试完成
+                await Promise.all(tasks);
+            }
+
+            try {
+                await runConcurrentTests();
+
+                // 计算平均值
+                state.testResults = modelsToTest.map(modelId => {
+                    const results = allResults[modelId];
+                    if (results.length === 0) {
+                        return {
+                            model: modelId,
+                            success: false,
+                            error: '所有测试均失败'
+                        };
+                    }
+
+                    const usageResults = results.filter(r => r.metricMode === 'usage');
+                    const metricResults = usageResults.length > 0 ? usageResults : results;
+                    const metricMode = usageResults.length === results.length
+                        ? 'usage'
+                        : usageResults.length > 0
+                            ? 'usage_preferred'
+                            : 'chunk_fallback';
+                    const metricModeLabel = metricMode === 'usage'
+                        ? '真 token'
+                        : metricMode === 'usage_preferred'
+                            ? '真 token（部分样本）'
+                            : '分片回退';
+                    const rateUnit = metricMode === 'chunk_fallback' ? '片段/s' : 'token/s';
+
+                    const avgTokensPerSecond = metricResults.reduce((sum, r) => sum + r.tokensPerSecond, 0) / metricResults.length;
+                    const avgTtft = results.reduce((sum, r) => sum + r.ttft, 0) / results.length;
+                    const avgVisibleTtft = results.reduce((sum, r) => sum + r.visibleTtft, 0) / results.length;
+                    const avgOutputTokens = metricResults.reduce((sum, r) => sum + r.outputTokens, 0) / metricResults.length;
+                    const avgReasoningTokens = metricResults.reduce((sum, r) => sum + (r.reasoningTokens || 0), 0) / metricResults.length;
+                    const avgTotalTime = results.reduce((sum, r) => sum + r.totalTime, 0) / results.length;
+                    const avgPromptTokens = metricResults.every(r => Number.isFinite(r.promptTokens))
+                        ? metricResults.reduce((sum, r) => sum + r.promptTokens, 0) / metricResults.length
+                        : null;
+                    const avgCompletionTokens = metricResults.every(r => Number.isFinite(r.completionTokens))
+                        ? metricResults.reduce((sum, r) => sum + r.completionTokens, 0) / metricResults.length
+                        : null;
+                    const avgTotalTokens = metricResults.every(r => Number.isFinite(r.totalTokens))
+                        ? metricResults.reduce((sum, r) => sum + r.totalTokens, 0) / metricResults.length
+                        : null;
+
+                    return {
+                        model: modelId,
+                        success: true,
+                        outputTokens: Math.round(avgOutputTokens),
+                        reasoningTokens: Math.round(avgReasoningTokens),
+                        totalTime: avgTotalTime.toFixed(2),
+                        visibleTtft: avgVisibleTtft.toFixed(3),
+                        ttft: avgTtft.toFixed(3),
+                        tokensPerSecond: avgTokensPerSecond.toFixed(2),
+                        samples: results.length,
+                        failedSamples: failedResultsByModel[modelId],
+                        metricMode,
+                        metricModeLabel,
+                        rateUnit,
+                        metricSamples: metricResults.length,
+                        promptTokens: avgPromptTokens !== null ? Math.round(avgPromptTokens) : null,
+                        completionTokens: avgCompletionTokens !== null ? Math.round(avgCompletionTokens) : null,
+                        totalTokens: avgTotalTokens !== null ? Math.round(avgTotalTokens) : null
+                    };
+                });
+
+                // 按速率排序
+                state.testResults.sort((a, b) => {
+                    if (!a.success) return 1;
+                    if (!b.success) return -1;
+                    return parseFloat(b.tokensPerSecond) - parseFloat(a.tokensPerSecond);
+                });
+
+                renderResults();
+            } finally {
+                elements.progressOverlay.classList.remove('active');
+                state.isTesting = false;
+                updateSelectedCount();
+            }
+        }
+
+        // 渲染结果
+        function renderResults() {
+            const successResults = state.testResults.filter(r => r.success);
+            const failedResults = state.testResults.filter(r => !r.success);
+
+            if (successResults.length === 0) {
+                elements.resultsArea.innerHTML = '<div class="empty-state">没有成功的测试结果</div>';
+                elements.chartContainer.classList.add('hidden');
+                elements.exportBtn.disabled = true;
+                return;
+            }
+
+            elements.exportBtn.disabled = false;
+
+            // 统计信息
+            const maxSpeed = Math.max(...successResults.map(r => parseFloat(r.tokensPerSecond)));
+            const avgSpeed = successResults.reduce((sum, r) => sum + parseFloat(r.tokensPerSecond), 0) / successResults.length;
+            const minVisibleTtft = Math.min(...successResults.map(r => parseFloat(r.visibleTtft)));
+            const minAnswerTtft = Math.min(...successResults.map(r => parseFloat(r.ttft)));
+
+            let html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${successResults.length}</div>
+                        <div class="stat-label">测试成功</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${maxSpeed.toFixed(1)}</div>
+                        <div class="stat-label">最高输出速率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${avgSpeed.toFixed(1)}</div>
+                        <div class="stat-label">平均输出速率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${minVisibleTtft.toFixed(2)}s</div>
+                        <div class="stat-label">最低可见首字延迟</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${minAnswerTtft.toFixed(2)}s</div>
+                        <div class="stat-label">最低回答首字延迟</div>
+                    </div>
+                </div>
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>模型</th>
+                            <th>统计口径</th>
+                            <th>速率</th>
+                            <th>可见首字延迟 (s)</th>
+                            <th>回答首字延迟 (s)</th>
+                            <th>输出计数</th>
+                            <th>思考计数</th>
+                            <th>总时间 (s)</th>
+                            <th>样本数</th>
+                            <th>失败轮次</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            successResults.forEach((result, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${result.model}</td>
+                        <td>${result.metricModeLabel}</td>
+                        <td style="color: var(--success); font-weight: 600;">${result.tokensPerSecond} ${result.rateUnit}</td>
+                        <td>${result.visibleTtft}</td>
+                        <td>${result.ttft}</td>
+                        <td>${result.outputTokens}</td>
+                        <td>${result.reasoningTokens || 0}</td>
+                        <td>${result.totalTime}</td>
+                        <td>${result.samples}</td>
+                        <td>${result.failedSamples || 0}</td>
+                    </tr>
+                `;
+            });
+
+            if (failedResults.length > 0) {
+                html += `
+                    </tbody>
+                    </table>
+                    <h3 style="margin-top: 24px; margin-bottom: 12px; color: var(--error);">测试失败的模型</h3>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>模型</th>
+                                <th>错误信息</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                failedResults.forEach(result => {
+                    html += `
+                        <tr>
+                            <td>${result.model}</td>
+                            <td style="color: var(--error);">${result.error}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            html += '</tbody></table>';
+            elements.resultsArea.innerHTML = html;
+
+            // 绘制图表
+            renderChart(successResults);
+        }
+
+        // 渲染图表
+        function renderChart(results) {
+            elements.chartContainer.classList.remove('hidden');
+
+            if (state.chart) {
+                state.chart.destroy();
+            }
+
+            const ctx = document.getElementById('resultChart').getContext('2d');
+
+            // 只取前15个模型，避免图表过于拥挤
+            const displayResults = results.slice(0, 15);
+
+            const labels = displayResults.map(r => r.model.length > 30 ? r.model.substring(0, 30) + '...' : r.model);
+            const speedData = displayResults.map(r => parseFloat(r.tokensPerSecond));
+            const visibleTtftData = displayResults.map(r => parseFloat(r.visibleTtft));
+            const ttftData = displayResults.map(r => parseFloat(r.ttft));
+
+            state.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '输出速率（真 token 优先，无 usage 时回退分片）',
+                            data: speedData,
+                            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '可见首字延迟 (s)',
+                            data: visibleTtftData,
+                            backgroundColor: 'rgba(56, 189, 248, 0.7)',
+                            borderColor: 'rgba(56, 189, 248, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '回答首字延迟 (s)',
+                            data: ttftData,
+                            backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                            borderColor: 'rgba(139, 92, 246, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e8e8f0'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1a1a24',
+                            titleColor: '#e8e8f0',
+                            bodyColor: '#e8e8f0',
+                            borderColor: '#2a2a3a',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: '输出速率（真 token 优先，无 usage 时回退分片） / 可见首字延迟 (s) / 回答首字延迟 (s)',
+                                color: '#8888a0'
+                            },
+                            ticks: {
+                                color: '#8888a0',
+                                precision: 0
+                            },
+                            grid: {
+                                color: '#2a2a3a'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#8888a0'
+                            },
+                            grid: {
+                                color: '#2a2a3a'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'top',
+                            ticks: {
+                                color: '#8888a0'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 导出结果
+        function exportResults() {
+            const data = state.testResults.map(r => {
+                if (r.success) {
+                    return {
+                        model: r.model,
+                        tokensPerSecond: r.tokensPerSecond,
+                        outputChunkRate: r.tokensPerSecond,
+                        metricMode: r.metricMode,
+                        metricModeLabel: r.metricModeLabel,
+                        rateUnit: r.rateUnit,
+                        visibleTtft: r.visibleTtft,
+                        finalAnswerTtft: r.ttft,
+                        visibleThinkingTtft: r.reasoningTtft ?? null,
+                        ttft: r.ttft,
+                        outputTokens: r.outputTokens,
+                        outputChunks: r.outputTokens,
+                        reasoningTokens: r.reasoningTokens || 0,
+                        reasoningChunks: r.reasoningTokens || 0,
+                        promptTokens: r.promptTokens ?? null,
+                        completionTokens: r.completionTokens ?? null,
+                        totalTokens: r.totalTokens ?? null,
+                        totalTime: r.totalTime,
+                        samples: r.samples,
+                        metricSamples: r.metricSamples ?? r.samples,
+                        failedSamples: r.failedSamples || 0
+                    };
+                } else {
+                    return {
+                        model: r.model,
+                        error: r.error
+                    };
+                }
+            });
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `llm-speed-test-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 事件绑定
+        elements.loadModelsBtn.addEventListener('click', loadModels);
+        elements.searchInput.addEventListener('input', (e) => renderModelList(e.target.value));
+        elements.selectAllBtn.addEventListener('click', selectAll);
+        elements.deselectAllBtn.addEventListener('click', deselectAll);
+        elements.startTestBtn.addEventListener('click', startTest);
+        elements.exportBtn.addEventListener('click', exportResults);
+
+        elements.modelList.addEventListener('click', (e) => {
+            const item = e.target.closest('.model-item');
+            if (item && !state.isTesting) {
+                toggleModel(item.dataset.id);
+            }
+        });
+
+        // 保存/恢复配置
+        let saveTimeout = null;
+        let saveIndicator = null;
+
+        function createSaveIndicator() {
+            const indicator = document.createElement('div');
+            indicator.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: rgba(34, 197, 94, 0.9);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: all 0.3s ease;
+                z-index: 1000;
+            `;
+            indicator.textContent = '已保存';
+            document.body.appendChild(indicator);
+            return indicator;
+        }
+
+        function showSaveIndicator() {
+            if (!saveIndicator) {
+                saveIndicator = createSaveIndicator();
+            }
+            saveIndicator.style.opacity = '1';
+            saveIndicator.style.transform = 'translateY(0)';
+            setTimeout(() => {
+                saveIndicator.style.opacity = '0';
+                saveIndicator.style.transform = 'translateY(20px)';
+            }, 1500);
+        }
+
+        function saveConfig() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                baseUrl: elements.baseUrl.value,
+                token: elements.apiToken.value,
+                prompt: elements.testPrompt.value,
+                maxTokens: elements.maxTokens.value,
+                repeatCount: elements.repeatCount.value,
+                concurrency: elements.concurrency.value,
+                models: state.models,
+                selectedModels: Array.from(state.selectedModels)
+            }));
+            showSaveIndicator();
+        }
+
+        function debouncedSave() {
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+            saveTimeout = setTimeout(saveConfig, 500);
+        }
+
+        function restoreConfig() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    elements.baseUrl.value = config.baseUrl || '';
+                    elements.apiToken.value = config.token || '';
+                    elements.testPrompt.value = config.prompt || '请写一篇关于人工智能的短文，大约500字。';
+                    elements.maxTokens.value = config.maxTokens || 500;
+                    elements.repeatCount.value = config.repeatCount || 3;
+                    elements.concurrency.value = config.concurrency || 3;
+                    state.models = Array.isArray(config.models)
+                        ? config.models.filter(model => model && typeof model.id === 'string' && !model.id.includes(':'))
+                        : [];
+
+                    const validIds = new Set(state.models.map(model => model.id));
+                    state.selectedModels = new Set(
+                        Array.isArray(config.selectedModels)
+                            ? config.selectedModels.filter(modelId => typeof modelId === 'string' && validIds.has(modelId))
+                            : []
+                    );
+
+                    renderModelList();
+                } catch (e) {
+                    // 忽略解析错误
+                }
+            }
+
+            updateSelectedCount();
+        }
+
+        // 自动保存配置 - 使用防抖的实时保存
+        [elements.baseUrl, elements.apiToken, elements.testPrompt, elements.maxTokens, elements.repeatCount, elements.concurrency].forEach(el => {
+            el.addEventListener('input', debouncedSave);
+            el.addEventListener('change', saveConfig);
+        });
+
+        // 初始化
+        restoreConfig();
+    </script>
+</body>
+</html>
