@@ -19,7 +19,7 @@ class Parser {
         //     url: 'http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8',
         //     headers: []
         // }
-        let data = await fetch( 'https://ffandown.smanx.xx.kg?url=' + url, {
+        let data = await fetch('https://ffandown.smanx.xx.kg?url=' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
                 "sec-ch-ua-arch": "\"arm\"",
@@ -38,7 +38,28 @@ class Parser {
         let m3u8 = data.m3u8;
         return {
             url: m3u8,
-            headers: []
+            headers: [
+                {
+                    key: 'sec-ch-ua',
+                    value: '"Chromium";v="146", "Not-A.Brand";v="24", "Microsoft Edge";v="146"'
+                },
+                {
+                    key: 'sec-ch-ua-mobile',
+                    value: '?0'
+                },
+                {
+                    key: 'sec-ch-ua-platform',
+                    value: '"Windows"'
+                },
+                {
+                    key: 'upgrade-insecure-requests',
+                    value: '1'
+                },
+                {
+                    key: 'user-agent',
+                    value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0'
+                }
+            ]
         }
     }
 }
