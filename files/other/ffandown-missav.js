@@ -19,7 +19,7 @@ class Parser {
         //     url: 'http://playertest.longtailvideo.com/adaptive/bipbop/gear4/prog_index.m3u8',
         //     headers: []
         // }
-        let data = await fetch( 'https://smanxapi.netlify.app/api/ffandown-missav?url=' + url, {
+        let data = await fetch( 'https://ffandown.smanx.xx.kg?url=' + url, {
             "headers": {
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
                 "sec-ch-ua-arch": "\"arm\"",
