@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>FullScreen</key>
+            <true/>
+            <key>IgnoreManifestScope</key>
+            <false/>
+            <key>IsRemovable</key>
+            <true/>
+            <key>Label</key>
+            <string>CHAT-PLAY</string>
+            <key>PayloadDescription</key>
+            <string>Configures a WebClip for the Home Screen</string>
+            <key>PayloadDisplayName</key>
+            <string>WebClip (CHAT-PLAY)</string>
+            <key>PayloadIdentifier</key>
+            <string>com.iosgodsipa.webclip.C3423D79-66F1-421D-9296-7CE942066BD9</string>
+            <key>PayloadType</key>
+            <string>com.apple.webClip.managed</string>
+            <key>PayloadUUID</key>
+            <string>C3423D79-66F1-421D-9296-7CE942066BD9</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Precomposed</key>
+            <true/>
+            <key>URL</key>
+            <string>https://rp.good.hidns.vip</string>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>CHAT-PLAY</string>
+    <key>PayloadIdentifier</key>
+    <string>com.iosgodsipa.profile.0383DECD-9D2E-434A-8ABF-48C06320EDEC</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>0383DECD-9D2E-434A-8ABF-48C06320EDEC</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>
